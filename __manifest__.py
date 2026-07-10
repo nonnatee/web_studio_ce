@@ -42,6 +42,7 @@ It enables dynamic modification of fields, views, PDF report templates, automate
             '/web_studio_ce/static/src/xml/security_editor.xml',
             '/web_studio_ce/static/src/xml/model_explorer.xml',
             '/web_studio_ce/static/src/xml/properties_builder.xml',
+            '/web_studio_ce/static/src/xml/studio_ce_canvas.xml',
         ],
     },
     'installable': True,

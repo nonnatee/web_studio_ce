@@ -87,6 +87,24 @@ class StudioCeController(http.Controller):
         if existing:
             return {'error': f'Field {field_name} already exists.'}
 
+        # If monetary type, check if currency_id exists or create a fallback x_currency_id
+        if field_type == 'monetary':
+            currency_field = request.env['ir.model.fields'].search([
+                ('model_id', '=', model.id),
+                ('name', 'in', ['currency_id', 'x_currency_id'])
+            ], limit=1)
+            if not currency_field:
+                request.env['ir.model.fields'].create({
+                    'name': 'x_currency_id',
+                    'model_id': model.id,
+                    'model': model_name,
+                    'field_description': 'Currency',
+                    'ttype': 'many2one',
+                    'relation': 'res.currency',
+                    'state': 'manual',
+                    'is_studio_ce': True,
+                })
+
         vals = {
             'name': field_name,
             'model_id': model.id,
@@ -102,6 +120,14 @@ class StudioCeController(http.Controller):
             vals['selection'] = selection
 
         new_field = request.env['ir.model.fields'].create(vals)
+
+        # Log change
+        request.env['studio.ce.log'].create({
+            'name': f"Created custom field '{field_name}' ({field_type})",
+            'model_name': model_name,
+            'log_type': 'field_create',
+            'field_id': new_field.id,
+        })
         
         # Trigger Odoo Registry reload so the new DB column is physically created
         request.env.registry.setup_models(request.cr)
@@ -151,6 +177,16 @@ class StudioCeController(http.Controller):
                 studio_view.arch = etree.tostring(root, encoding='utf-8', pretty_print=True).decode('utf-8')
             except Exception as e:
                 return {'error': f'XML Parsing Error: {str(e)}'}
+
+        # Log change
+        request.env['studio.ce.log'].create({
+            'name': f"Modified layout for view '{target_view.name}'",
+            'model_name': target_view.model,
+            'view_id': target_view.id,
+            'log_type': 'view_modify',
+            'xpath_expr': xpath_expr,
+            'modification_xml': modification_xml,
+        })
 
         return {
             'studio_view_id': studio_view.id,
@@ -568,3 +604,129 @@ class StudioCeController(http.Controller):
 
         parent_record.write({def_field_name: schema_json})
         return {'status': 'success'}
+
+    @http.route('/web_studio_ce/insert_field_into_view', type='json', auth='user')
+    def insert_field_into_view(self, view_id, field_name, target_field_name=None, position='after', group_name=None, page_name=None):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        target_view = request.env['ir.ui.view'].browse(view_id)
+        if not target_view.exists():
+            return {'error': 'Target view not found.'}
+
+        # Build modification XML
+        field_xml = f'<field name="{field_name}"/>'
+        if group_name:
+            field_xml = f'<group string="{group_name}">{field_xml}</group>'
+        if page_name:
+            field_xml = f'<page string="{page_name}">{field_xml}</page>'
+
+        if target_field_name:
+            xpath_expr = f"//field[@name='{target_field_name}']"
+        else:
+            xpath_expr = "//sheet"
+            position = "inside"
+
+        modification_xml = f'<xpath expr="{xpath_expr}" position="{position}">{field_xml}</xpath>'
+
+        res = self.edit_view(view_id=view_id, xpath_expr=xpath_expr, modification_xml=modification_xml)
+        if 'error' not in res:
+            latest_log = request.env['studio.ce.log'].search([
+                ('view_id', '=', target_view.id),
+                ('log_type', '=', 'view_modify')
+            ], limit=1, order='id desc')
+            if latest_log:
+                latest_log.name = f"Inserted field '{field_name}' {position} '{target_field_name or 'sheet'}'"
+        return res
+
+    @http.route('/web_studio_ce/toggle_field_visibility', type='json', auth='user')
+    def toggle_field_visibility(self, view_id, field_name, invisible):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        target_view = request.env['ir.ui.view'].browse(view_id)
+        if not target_view.exists():
+            return {'error': 'Target view not found.'}
+
+        xpath_expr = f"//field[@name='{field_name}']"
+        val = "1" if invisible else "0"
+        modification_xml = f'<xpath expr="{xpath_expr}" position="attributes"><attribute name="invisible">{val}</attribute></xpath>'
+
+        res = self.edit_view(view_id=view_id, xpath_expr=xpath_expr, modification_xml=modification_xml)
+        if 'error' not in res:
+            latest_log = request.env['studio.ce.log'].search([
+                ('view_id', '=', target_view.id),
+                ('log_type', '=', 'view_modify')
+            ], limit=1, order='id desc')
+            if latest_log:
+                state_str = "Hidden" if invisible else "Shown"
+                latest_log.name = f"Toggled field '{field_name}' visibility to {state_str}"
+                latest_log.log_type = 'property_override'
+        return res
+
+    @http.route('/web_studio_ce/override_view_field_property', type='json', auth='user')
+    def override_view_field_property(self, view_id, field_name, prop_name, prop_value):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        target_view = request.env['ir.ui.view'].browse(view_id)
+        if not target_view.exists():
+            return {'error': 'Target view not found.'}
+
+        attr_map = {
+            'label': 'string',
+            'required': 'required',
+            'readonly': 'readonly',
+            'widget': 'widget',
+            'placeholder': 'placeholder',
+        }
+        xml_attr = attr_map.get(prop_name, prop_name)
+
+        xpath_expr = f"//field[@name='{field_name}']"
+        modification_xml = f'<xpath expr="{xpath_expr}" position="attributes"><attribute name="{xml_attr}">{prop_value}</attribute></xpath>'
+
+        res = self.edit_view(view_id=view_id, xpath_expr=xpath_expr, modification_xml=modification_xml)
+        if 'error' not in res:
+            latest_log = request.env['studio.ce.log'].search([
+                ('view_id', '=', target_view.id),
+                ('log_type', '=', 'view_modify')
+            ], limit=1, order='id desc')
+            if latest_log:
+                latest_log.name = f"Overrode property '{prop_name}' on '{field_name}' to '{prop_value}'"
+                latest_log.log_type = 'property_override'
+        return res
+
+    @http.route('/web_studio_ce/get_customisation_logs', type='json', auth='user')
+    def get_customisation_logs(self, model_name):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        logs = request.env['studio.ce.log'].search([
+            ('model_name', '=', model_name),
+            ('active', '=', True)
+        ])
+        log_data = []
+        for log in logs:
+            log_data.append({
+                'id': log.id,
+                'name': log.name,
+                'create_date': log.create_date.strftime('%Y-%m-%d %H:%M:%S') if log.create_date else '',
+                'log_type': log.log_type,
+            })
+        return log_data
+
+    @http.route('/web_studio_ce/revert_customisation', type='json', auth='user')
+    def revert_customisation(self, log_id):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        log = request.env['studio.ce.log'].browse(log_id)
+        if not log.exists():
+            return {'error': 'Log record not found.'}
+
+        try:
+            log.action_revert()
+            return {'status': 'success'}
+        except Exception as e:
+            return {'error': f'Revert failed: {str(e)}'}
+

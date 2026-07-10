@@ -13,6 +13,9 @@
                 <li class="nav-item">
                     <button class="nav-link py-2" t-att-class="{ active: props.activeTab === 'automations' }" t-on-click="() => props.onTabChange('automations')">Rules</button>
                 </li>
+                <li class="nav-item">
+                    <button class="nav-link py-2" t-att-class="{ active: props.activeTab === 'logs' }" t-on-click="() => props.onTabChange('logs')">History</button>
+                </li>
             </ul>
 
             <div class="tab-content p-3 flex-grow-1">
@@ -30,12 +33,12 @@
                             <PropertiesBuilder fieldName="props.selectedField.name" modelName="props.modelName"/>
                         </t>
                         <t t-else="">
-                            <!-- Properties Inputs -->
+                            <!-- Properties Inputs (Per-View Overrides) -->
                             <div class="mb-3">
                                 <label class="form-label text-secondary small fw-bold">Field Label</label>
                                 <input type="text" class="form-control form-control-sm"
                                        t-att-value="props.selectedField.field_description"
-                                       t-on-change="(ev) => this.updateProperty('field_description', ev.target.value)"/>
+                                       t-on-change="(ev) => this.overrideProperty('label', ev.target.value)"/>
                             </div>
 
                             <div class="mb-3">
@@ -53,22 +56,49 @@
                             <div class="form-check mb-2">
                                 <input type="checkbox" class="form-check-input" id="prop_req"
                                        t-att-checked="props.selectedField.required"
-                                       t-on-change="(ev) => this.updateProperty('required', ev.target.checked)"/>
+                                       t-on-change="(ev) => this.overrideProperty('required', ev.target.checked ? '1' : '0')"/>
                                 <label class="form-check-label text-dark small" for="prop_req">Required field</label>
                             </div>
 
                             <div class="form-check mb-2">
                                 <input type="checkbox" class="form-check-input" id="prop_inv"
                                        t-att-checked="props.selectedField.invisible"
-                                       t-on-change="(ev) => this.updateProperty('invisible', ev.target.checked)"/>
+                                       t-on-change="(ev) => this.overrideProperty('invisible', ev.target.checked ? '1' : '0')"/>
                                 <label class="form-check-label text-dark small" for="prop_inv">Invisible / Hidden</label>
                             </div>
 
-                            <div class="form-check mb-4">
+                            <div class="form-check mb-3">
                                 <input type="checkbox" class="form-check-input" id="prop_ro"
                                        t-att-checked="props.selectedField.readonly"
-                                       t-on-change="(ev) => this.updateProperty('readonly', ev.target.checked)"/>
+                                       t-on-change="(ev) => this.overrideProperty('readonly', ev.target.checked ? '1' : '0')"/>
                                 <label class="form-check-label text-dark small" for="prop_ro">Read-only field</label>
+                            </div>
+
+                            <!-- Override Widget -->
+                            <div class="mb-3 border-top pt-2">
+                                <label class="form-label text-secondary small fw-bold">Widget</label>
+                                <select class="form-select form-select-sm"
+                                        t-on-change="(ev) => this.overrideProperty('widget', ev.target.value)">
+                                    <option value="">Default</option>
+                                    <option value="many2many_tags">Tags (many2many_tags)</option>
+                                    <option value="monetary">Monetary</option>
+                                    <option value="percentage">Percentage</option>
+                                    <option value="phone">Phone</option>
+                                    <option value="email">Email</option>
+                                    <option value="url">URL</option>
+                                    <option value="image">Image</option>
+                                    <option value="selection">Selection</option>
+                                    <option value="html">HTML</option>
+                                    <option value="binary">Binary</option>
+                                </select>
+                            </div>
+
+                            <!-- Override Placeholder -->
+                            <div class="mb-3">
+                                <label class="form-label text-secondary small fw-bold">Placeholder</label>
+                                <input type="text" class="form-control form-control-sm"
+                                       placeholder="Enter help text..."
+                                       t-on-change="(ev) => this.overrideProperty('placeholder', ev.target.value)"/>
                             </div>
 
                             <!-- Relational Link -->
@@ -101,20 +131,27 @@
                     </t>
 
                     <t t-else="">
-                        <h5 class="fw-bold mb-3">Add Custom Field</h5>
-                        <div class="d-grid gap-2 mb-4">
-                            <button class="btn btn-outline-primary btn-sm text-start" t-on-click="() => props.onAddField('char', 'Custom Label')">+ Text (Char)</button>
-                            <button class="btn btn-outline-primary btn-sm text-start" t-on-click="() => props.onAddField('integer', 'Custom Number')">+ Integer</button>
-                            <button class="btn btn-outline-primary btn-sm text-start" t-on-click="() => props.onAddField('boolean', 'Custom Boolean')">+ Checkbox (Boolean)</button>
-                            <button class="btn btn-outline-primary btn-sm text-start" t-on-click="() => props.onAddField('selection', 'Selection List')">+ Selection Dropdown</button>
-                            <button class="btn btn-outline-primary btn-sm text-start" t-on-click="() => props.onAddField('many2one', 'Related Link')">+ Relation (Many2one)</button>
+                        <h5 class="fw-bold mb-2">Add Custom Field</h5>
+                        <div class="d-grid gap-1 mb-4 overflow-auto" style="max-height: 250px; border: 1px solid #eee; padding: 5px; border-radius: 4px;">
+                            <button class="btn btn-outline-primary btn-sm text-start py-1" t-on-click="() => props.onAddField('char', 'Custom Label')">+ Text (Char)</button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1" t-on-click="() => props.onAddField('integer', 'Custom Integer')">+ Integer</button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1" t-on-click="() => props.onAddField('float', 'Custom Float')">+ Float</button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1" t-on-click="() => props.onAddField('monetary', 'Custom Monetary')">+ Monetary</button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1" t-on-click="() => props.onAddField('date', 'Custom Date')">+ Date</button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1" t-on-click="() => props.onAddField('datetime', 'Custom Datetime')">+ Datetime</button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1" t-on-click="() => props.onAddField('boolean', 'Custom Checkbox')">+ Checkbox (Boolean)</button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1" t-on-click="() => props.onAddField('selection', 'Selection List')">+ Selection Dropdown</button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1" t-on-click="() => props.onAddField('many2one', 'Related Link (m2o)')">+ Relation (Many2one)</button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1" t-on-click="() => props.onAddField('many2many', 'Relation Tags (m2m)')">+ Relation (Many2many)</button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1" t-on-click="() => props.onAddField('binary', 'Custom Binary File')">+ Binary File</button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1" t-on-click="() => props.onAddField('html', 'Custom HTML Area')">+ HTML Field</button>
                         </div>
 
                         <h5 class="fw-bold mb-2">Existing Fields</h5>
                         <div class="list-group list-group-flush border rounded overflow-auto" style="max-height: 250px;">
                             <t t-foreach="props.fields" t-as="field" t-key="field.id">
                                 <div class="list-group-item d-flex justify-content-between align-items-center py-2 px-3">
-                                    <div class="text-truncate me-2" t-on-click="() => props.onSelectField(field)">
+                                    <div class="text-truncate me-2 cursor-pointer" t-on-click="() => props.onSelectField(field)">
                                         <div class="fw-bold text-dark text-truncate small"><t t-esc="field.field_description"/></div>
                                         <small class="text-muted font-monospace" style="font-size:0.75rem;"><t t-esc="field.name"/></small>
                                     </div>
@@ -165,6 +202,25 @@
                             </t>
                         </div>
                     </t>
+                </div>
+
+                <!-- 4. Logs / History Tab -->
+                <div t-if="props.activeTab === 'logs'" class="tab-pane show active">
+                    <h5 class="fw-bold mb-3">Customisation Log</h5>
+                    <div class="list-group list-group-flush border rounded overflow-auto" style="max-height: 400px;">
+                        <t t-foreach="props.logs" t-as="log" t-key="log.id">
+                            <div class="list-group-item py-2 px-3 bg-light bg-opacity-25 d-flex justify-content-between align-items-center">
+                                <div style="max-width: 75%;">
+                                    <div class="fw-bold text-dark small" style="line-height: 1.2;"><t t-esc="log.name"/></div>
+                                    <small class="text-muted" style="font-size:0.65rem;"><t t-esc="log.create_date"/></small>
+                                </div>
+                                <button class="btn btn-sm btn-outline-danger py-0 px-2 flex-shrink-0" t-on-click="() => props.onRevertLog(log.id)">Revert</button>
+                            </div>
+                        </t>
+                        <div t-if="props.logs.length === 0" class="text-center text-muted py-5 small">
+                            <p class="mb-0">No customisations logged for this model yet.</p>
+                        </div>
+                    </div>
                 </div>
 
             </div>

@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="web_studio_ce.StudioCeCanvas" owl="1">
+        <div class="o_studio_ce_canvas d-flex flex-column h-100 bg-light p-3 position-relative">
+            <!-- Canvas Header -->
+            <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                <div>
+                    <h5 class="fw-bold text-dark mb-0">Live View Canvas</h5>
+                    <small class="text-muted" t-if="props.view">Active view: <span class="font-monospace"><t t-esc="props.view.name"/></span></small>
+                </div>
+                <span class="badge bg-success text-white">Live Editor Mode</span>
+            </div>
+
+            <!-- Empty State / No View Loaded -->
+            <div t-if="!props.view" class="flex-grow-1 d-flex flex-column justify-content-center align-items-center border-dashed rounded m-3 p-5">
+                <span class="fs-1 mb-3">🖥️</span>
+                <h5 class="fw-bold text-dark">No View Selected</h5>
+                <p class="text-muted text-center max-w-sm">Please choose a view from the model views list or open an app to load the live editor canvas.</p>
+            </div>
+
+            <!-- Form/List Render Canvas -->
+            <div t-else="" class="flex-grow-1 overflow-auto bg-white border rounded shadow-sm p-4">
+                <t t-foreach="state.archTree" t-as="rootNode" t-key="rootNode_index">
+                    <t t-call="web_studio_ce.CanvasNode">
+                        <t t-set="node" t-value="rootNode"/>
+                    </t>
+                </t>
+            </div>
+
+            <!-- Insert Field Wizard Modal -->
+            <div t-if="state.showInsertModal" class="modal fade show d-block bg-dark bg-opacity-50" tabindex="-1" role="dialog" style="z-index: 1050;">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content shadow">
+                        <div class="modal-header bg-primary text-white py-3">
+                            <h5 class="modal-title fw-bold">📌 Insert Field Wizard</h5>
+                            <button type="button" class="btn-close btn-close-white" t-on-click="closeInsertion"></button>
+                        </div>
+                        <div class="modal-body py-4">
+                            <p class="small text-muted mb-4">Choose where to place the field <strong><t t-esc="state.insertingField ? state.insertingField.field_description : ''"/></strong> inside the form view.</p>
+                            
+                            <!-- Sibling Field Selector -->
+                            <div class="mb-3">
+                                <label class="form-label text-secondary small fw-bold">Position Relative to Field</label>
+                                <select class="form-select form-select-sm" t-model="state.targetFieldName">
+                                    <option value="">(None - append to sheet)</option>
+                                    <t t-foreach="props.fields" t-as="f" t-key="f.id">
+                                        <option t-att-value="f.name"><t t-esc="f.field_description"/> (<t t-esc="f.name"/>)</option>
+                                    </t>
+                                </select>
+                            </div>
+
+                            <!-- Position Mode -->
+                            <div class="mb-3" t-if="state.targetFieldName">
+                                <label class="form-label text-secondary small fw-bold">Insertion Placement</label>
+                                <select class="form-select form-select-sm" t-model="state.insertPosition">
+                                    <option value="after">After Sibling Field</option>
+                                    <option value="before">Before Sibling Field</option>
+                                </select>
+                            </div>
+
+                            <!-- Wrap in Group -->
+                            <div class="mb-3">
+                                <label class="form-label text-secondary small fw-bold">Create Inside New Group (Optional)</label>
+                                <input type="text" class="form-control form-control-sm" placeholder="e.g. Sales Information" t-model="state.groupName"/>
+                            </div>
+
+                            <!-- Wrap in Notebook Page -->
+                            <div class="mb-3">
+                                <label class="form-label text-secondary small fw-bold">Create Inside New Notebook Tab (Optional)</label>
+                                <input type="text" class="form-control form-control-sm" placeholder="e.g. Extra Settings" t-model="state.pageName"/>
+                            </div>
+                        </div>
+                        <div class="modal-footer bg-light py-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" t-on-click="closeInsertion">Cancel</button>
+                            <button type="button" class="btn btn-sm btn-primary px-3" t-on-click="submitInsertion">Insert Field</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </t>
+
+    <!-- Recursive Node Renderer Template -->
+    <t t-name="web_studio_ce.CanvasNode" owl="1">
+        <!-- Form Node -->
+        <div t-if="node.name === 'form'" class="o_canvas_form_root">
+            <t t-foreach="node.children" t-as="child" t-key="child_index">
+                <t t-call="web_studio_ce.CanvasNode"><t t-set="node" t-value="child"/></t>
+            </t>
+        </div>
+
+        <!-- Sheet Node -->
+        <div t-elif="node.name === 'sheet'" class="o_canvas_sheet border rounded shadow-sm p-4 bg-white mb-4 position-relative">
+            <div class="position-absolute top-0 start-0 m-2 text-muted font-monospace" style="font-size: 0.65rem;">sheet</div>
+            <t t-foreach="node.children" t-as="child" t-key="child_index">
+                <t t-call="web_studio_ce.CanvasNode"><t t-set="node" t-value="child"/></t>
+            </t>
+        </div>
+
+        <!-- Group Node -->
+        <div t-elif="node.name === 'group'" class="o_canvas_group border rounded p-3 mb-3 bg-light bg-opacity-25 position-relative">
+            <div class="position-absolute top-0 start-0 m-1 text-muted font-monospace" style="font-size: 0.65rem;">group</div>
+            <div t-if="node.attrs.string" class="fw-bold text-secondary border-bottom pb-1 mb-3 small"><t t-esc="node.attrs.string"/></div>
+            
+            <div class="row g-2">
+                <t t-foreach="node.children" t-as="child" t-key="child_index">
+                    <div class="col-md-6 col-sm-12">
+                        <t t-call="web_studio_ce.CanvasNode"><t t-set="node" t-value="child"/></t>
+                    </div>
+                </t>
+            </div>
+        </div>
+
+        <!-- Notebook Node -->
+        <div t-elif="node.name === 'notebook'" class="o_canvas_notebook card mb-3">
+            <div class="card-header bg-light py-2">
+                <ul class="nav nav-tabs card-header-tabs">
+                    <t t-foreach="node.children" t-as="child" t-key="child_index">
+                        <li class="nav-item">
+                            <span class="nav-link py-1 px-3 active font-monospace small"><t t-esc="child.attrs.string || 'Tab'"/></span>
+                        </li>
+                    </t>
+                </ul>
+            </div>
+            <div class="card-body">
+                <t t-foreach="node.children" t-as="child" t-key="child_index">
+                    <t t-call="web_studio_ce.CanvasNode"><t t-set="node" t-value="child"/></t>
+                </t>
+            </div>
+        </div>
+
+        <!-- Page Node -->
+        <div t-elif="node.name === 'page'" class="o_canvas_page py-2">
+            <t t-foreach="node.children" t-as="child" t-key="child_index">
+                <t t-call="web_studio_ce.CanvasNode"><t t-set="node" t-value="child"/></t>
+            </t>
+        </div>
+
+        <!-- Field Node -->
+        <div t-elif="node.name === 'field'" 
+             t-att-class="'o_canvas_field_card d-flex flex-column border rounded p-3 mb-2 cursor-pointer transition-all ' + 
+                          ((props.selectedField &amp;&amp; props.selectedField.name === node.attrs.name) ? 'border-primary shadow-sm bg-primary bg-opacity-10' : 'bg-white border-light')"
+             t-att-style="node.attrs.invisible === '1' ? 'opacity: 0.55; border-style: dashed !important;' : ''"
+             t-on-click="() => this.selectField(node.attrs.name)">
+            
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <!-- Field Label -->
+                <span class="fw-bold text-dark small">
+                    <t t-esc="node.attrs.string || getFieldLabel(node.attrs.name)"/>
+                </span>
+                
+                <!-- Visibility & Properties Badge Toggles -->
+                <div class="d-flex align-items-center gap-2">
+                    <span t-if="node.attrs.required === '1' || node.attrs.required === 'True'" class="badge bg-danger text-white" style="font-size:0.6rem;">Required</span>
+                    <span t-if="node.attrs.readonly === '1' || node.attrs.readonly === 'True'" class="badge bg-secondary text-white" style="font-size:0.6rem;">Read-only</span>
+                    <button class="btn btn-xs py-0 px-1 border-0 bg-transparent text-secondary" 
+                            t-att-title="node.attrs.invisible === '1' ? 'Show Field' : 'Hide Field'"
+                            t-on-click.stop="() => props.onToggleVisibility(node.attrs.name, node.attrs.invisible !== '1')">
+                        <t t-if="node.attrs.invisible === '1'">👁️‍🗨️</t>
+                        <t t-else="">👁️</t>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Technical Mockup Input -->
+            <div class="font-monospace text-muted mt-2 small bg-light p-1 rounded" style="font-size: 0.75rem;">
+                &lt;field name="<t t-esc="node.attrs.name"/>" <t t-if="node.attrs.widget">widget="<t t-esc="node.attrs.widget"/>"</t>/&gt;
+            </div>
+        </div>
+
+        <!-- Generic / Fallback Node -->
+        <div t-else="" class="o_canvas_generic_node border border-dashed rounded p-2 mb-2 text-muted font-monospace small bg-light text-center" style="font-size: 0.75rem;">
+            &lt;<t t-esc="node.name"/>&gt;
+            <t t-foreach="node.children" t-as="child" t-key="child_index">
+                <t t-call="web_studio_ce.CanvasNode"><t t-set="node" t-value="child"/></t>
+            </t>
+        </div>
+    </t>
+</templates>

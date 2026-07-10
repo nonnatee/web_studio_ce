@@ -250,3 +250,24 @@
         }
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Canvas Node Styling
+// ─────────────────────────────────────────────────────────────────────────────
+.o_studio_ce_canvas {
+    .o_canvas_field_card {
+        border-width: 1px;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        
+        &:hover {
+            border-color: #007bff !important;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        }
+    }
+    
+    .btn-xs {
+        padding: 0.1rem 0.25rem;
+        font-size: 0.7rem;
+        line-height: 1.2;
+    }
+}

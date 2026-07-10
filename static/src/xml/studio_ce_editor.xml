@@ -27,6 +27,7 @@
                                  automations="state.automations"
                                  selectedField="state.selectedField"
                                  modelName="state.model"
+                                 logs="state.logs"
                                  onTabChange="(tab) => state.activeTab = tab"
                                  onSelectField="(field) => state.selectedField = field"
                                  onDeselectField="() => state.selectedField = null"
@@ -34,7 +35,8 @@
                                  onAddField.bind="addCustomField"
                                  onAddFieldToView.bind="addFieldToView"
                                  onAddAutomation.bind="addAutomationRule"
-                                 onRuleReload.bind="loadStudioContext"/>
+                                 onRuleReload.bind="loadStudioContext"
+                                 onRevertLog.bind="revertLog"/>
 
                 <!-- Central Canvas Overlay -->
                 <main class="flex-grow-1 bg-light p-4 overflow-auto position-relative">
@@ -48,19 +50,14 @@
                         <SecurityEditor model="state.model"/>
                     </t>
                     <t t-else="">
-                        <div class="card shadow-sm h-100">
-                            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0 fw-bold text-dark">Live View Editor Canvas</h5>
-                                <span class="badge bg-info text-white">Visual Mockup Mode</span>
-                            </div>
-                            <div class="card-body bg-white d-flex flex-column justify-content-center align-items-center border-dashed rounded m-3 p-5" style="border: 2px dashed #ccc;">
-                                <i class="oi oi-view-list text-muted mb-3" style="font-size: 3rem;"></i>
-                                <h4 class="text-muted fw-bold">Active Layout: <t t-esc="state.model"/></h4>
-                                <p class="text-muted text-center max-w-md">
-                                    Use the Properties panel on the left to add fields or rules. Dynamic changes will apply immediately to target metadata tables.
-                                </p>
-                            </div>
-                        </div>
+                        <StudioCeCanvas t-ref="canvas"
+                                        view="state.views.find(v => v.id === state.viewId) || state.views[0]"
+                                        fields="state.fields"
+                                        selectedField="state.selectedField"
+                                        onSelectField="(field) => state.selectedField = field"
+                                        onToggleVisibility.bind="toggleFieldVisibility"
+                                        onInsertField.bind="insertFieldIntoView"
+                                        onOverrideProperty.bind="overrideViewFieldProperty"/>
                     </t>
                 </main>
             </div>

@@ -8,6 +8,7 @@ import { rpc } from "@web/core/network/rpc";
 import { AppCreator } from "./app_creator";
 import { SecurityEditor } from "./security_editor";
 import { StudioCeSidebar } from "./studio_ce_sidebar";
+import { StudioCeCanvas } from "./studio_ce_canvas";
 
 export class StudioCeEditor extends Component {
     setup() {
@@ -20,6 +21,7 @@ export class StudioCeEditor extends Component {
             views: [],
             automations: [],
             groups: [],
+            logs: [],
             loading: true,
             showDocs: false,
             showAppCreator: false,
@@ -50,8 +52,96 @@ export class StudioCeEditor extends Component {
                 this.state.automations = data.automations;
                 this.state.groups = data.groups;
             }
+
+            // Load Customisation Logs
+            const logData = await this.rpc("/web_studio_ce/get_customisation_logs", {
+                model_name: this.state.model,
+            });
+            if (logData && !logData.error) {
+                this.state.logs = logData;
+            }
         } catch (error) {
             console.error("Failed to load Studio CE context", error);
+        } finally {
+            this.state.loading = false;
+        }
+    }
+
+    async toggleFieldVisibility(fieldName, invisible) {
+        if (!this.state.views || this.state.views.length === 0) return;
+        const viewId = this.state.viewId || this.state.views[0].id;
+        this.state.loading = true;
+        try {
+            const res = await this.rpc("/web_studio_ce/toggle_field_visibility", {
+                view_id: viewId,
+                field_name: fieldName,
+                invisible: invisible,
+            });
+            if (!res.error) {
+                await this.loadStudioContext();
+            }
+        } catch (error) {
+            console.error("Failed to toggle field visibility", error);
+        } finally {
+            this.state.loading = false;
+        }
+    }
+
+    async insertFieldIntoView(fieldName, targetFieldName, position, groupName, pageName) {
+        if (!this.state.views || this.state.views.length === 0) return;
+        const viewId = this.state.viewId || this.state.views[0].id;
+        this.state.loading = true;
+        try {
+            const res = await this.rpc("/web_studio_ce/insert_field_into_view", {
+                view_id: viewId,
+                field_name: fieldName,
+                target_field_name: targetFieldName,
+                position: position,
+                group_name: groupName,
+                page_name: pageName,
+            });
+            if (!res.error) {
+                await this.loadStudioContext();
+            }
+        } catch (error) {
+            console.error("Failed to insert field into view", error);
+        } finally {
+            this.state.loading = false;
+        }
+    }
+
+    async overrideViewFieldProperty(fieldName, propName, propValue) {
+        if (!this.state.views || this.state.views.length === 0) return;
+        const viewId = this.state.viewId || this.state.views[0].id;
+        this.state.loading = true;
+        try {
+            const res = await this.rpc("/web_studio_ce/override_view_field_property", {
+                view_id: viewId,
+                field_name: fieldName,
+                prop_name: propName,
+                prop_value: propValue,
+            });
+            if (!res.error) {
+                await this.loadStudioContext();
+            }
+        } catch (error) {
+            console.error("Failed to override view field property", error);
+        } finally {
+            this.state.loading = false;
+        }
+    }
+
+    async revertLog(logId) {
+        this.state.loading = true;
+        try {
+            const res = await this.rpc("/web_studio_ce/revert_customisation", {
+                log_id: logId,
+            });
+            if (!res.error) {
+                await this.loadStudioContext();
+            }
+        } catch (error) {
+            console.error("Failed to revert customization", error);
         } finally {
             this.state.loading = false;
         }
@@ -78,22 +168,27 @@ export class StudioCeEditor extends Component {
     }
 
     async addFieldToView(viewId, fieldName) {
-        this.state.loading = true;
-        const xpathExpr = "//sheet"; // target sheets in forms
-        const xmlMod = `<xpath expr="${xpathExpr}" position="inside"><field name="${fieldName}"/></xpath>`;
-        try {
-            const result = await this.rpc("/web_studio_ce/edit_view", {
-                view_id: viewId,
-                xpath_expr: xpathExpr,
-                modification_xml: xmlMod,
-            });
-            if (!result.error) {
-                await this.loadStudioContext();
+        const field = this.state.fields.find(f => f.name === fieldName);
+        if (field && this.refs.canvas) {
+            this.refs.canvas.startInsertion(field);
+        } else {
+            this.state.loading = true;
+            const xpathExpr = "//sheet"; // target sheets in forms
+            const xmlMod = `<xpath expr="${xpathExpr}" position="inside"><field name="${fieldName}"/></xpath>`;
+            try {
+                const result = await this.rpc("/web_studio_ce/edit_view", {
+                    view_id: viewId,
+                    xpath_expr: xpathExpr,
+                    modification_xml: xmlMod,
+                });
+                if (!result.error) {
+                    await this.loadStudioContext();
+                }
+            } catch (error) {
+                console.error("Failed to edit view", error);
+            } finally {
+                this.state.loading = false;
             }
-        } catch (error) {
-            console.error("Failed to edit view", error);
-        } finally {
-            this.state.loading = false;
         }
     }
 

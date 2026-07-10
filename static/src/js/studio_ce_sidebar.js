@@ -31,6 +31,10 @@ export class StudioCeSidebar extends Component {
         this.props.onFieldUpdate(this.props.selectedField.name, { [propName]: value });
     }
 
+    overrideProperty(propName, value) {
+        this.props.onOverrideProperty(this.props.selectedField.name, propName, value);
+    }
+
     selectRule(rule) {
         this.state.selectedRule = rule;
     }
@@ -57,14 +61,17 @@ StudioCeSidebar.props = {
     fields: Array,
     views: Array,
     automations: Array,
+    logs: Array,
     selectedField: { type: Object, optional: true },
     onFieldUpdate: Function,
     onAddField: Function,
+    onAddFieldToView: Function,
     onAddAutomation: Function,
     onRuleReload: Function,
     onTabChange: Function,
     onSelectField: Function,
     onDeselectField: Function,
-    onAddFieldToView: Function,
+    onOverrideProperty: Function,
+    onRevertLog: Function,
     modelName: String,
 };
