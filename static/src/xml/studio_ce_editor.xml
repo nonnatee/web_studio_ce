@@ -9,6 +9,9 @@
                     <span class="badge bg-secondary ms-3"><t t-esc="state.model"/></span>
                 </div>
                 <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1" t-on-click="openAppCreator">
+                        <span>🆕</span> Create App
+                    </button>
                     <button class="btn btn-outline-light btn-sm o_studio_ce_help_btn d-flex align-items-center gap-1" t-on-click="openDocs">
                         <span>📖</span> Help
                     </button>
@@ -18,78 +21,19 @@
 
             <!-- Main Workspace -->
             <div class="d-flex flex-grow-1 w-100 overflow-hidden">
-                <!-- Sidebar Property Panel -->
-                <aside class="o_studio_ce_sidebar bg-white border-end d-flex flex-column flex-shrink-0 h-100 overflow-auto" style="width: 320px;">
-                    <ul class="nav nav-tabs nav-fill flex-shrink-0 border-bottom">
-                        <li class="nav-item">
-                            <button class="nav-link py-2" t-att-class="{ active: state.activeTab === 'fields' }" t-on-click="() => state.activeTab = 'fields'">Fields</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link py-2" t-att-class="{ active: state.activeTab === 'views' }" t-on-click="() => state.activeTab = 'views'">Views</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link py-2" t-att-class="{ active: state.activeTab === 'automations' }" t-on-click="() => state.activeTab = 'automations'">Rules</button>
-                        </li>
-                    </ul>
-
-                    <div class="tab-content p-3 flex-grow-1">
-                        <!-- Add/Modify Fields Tab -->
-                        <div t-if="state.activeTab === 'fields'" class="tab-pane show active">
-                            <h5 class="fw-bold mb-3">Add Custom Field</h5>
-                            <div class="d-grid gap-2 mb-4">
-                                <button class="btn btn-outline-primary btn-sm text-start" t-on-click="() => this.addCustomField('char', 'Custom Label')">+ Text (Char)</button>
-                                <button class="btn btn-outline-primary btn-sm text-start" t-on-click="() => this.addCustomField('integer', 'Custom Number')">+ Integer</button>
-                                <button class="btn btn-outline-primary btn-sm text-start" t-on-click="() => this.addCustomField('boolean', 'Custom Boolean')">+ Checkbox (Boolean)</button>
-                            </div>
-
-                            <h5 class="fw-bold mb-2">Existing Fields</h5>
-                            <div class="list-group list-group-flush border rounded overflow-auto" style="max-height: 300px;">
-                                <t t-foreach="state.fields" t-as="field" t-key="field.id">
-                                    <div class="list-group-item d-flex justify-content-between align-items-center py-2 px-3">
-                                        <div>
-                                            <div class="fw-bold text-dark"><t t-esc="field.field_description"/></div>
-                                            <small class="text-muted font-monospace"><t t-esc="field.name"/></small>
-                                        </div>
-                                        <button class="btn btn-sm btn-link py-0 px-1 text-primary" 
-                                                t-if="state.views.length > 0"
-                                                t-on-click="() => this.addFieldToView(state.views[0].id, field.name)">
-                                            Add to View
-                                        </button>
-                                    </div>
-                                </t>
-                            </div>
-                        </div>
-
-                        <!-- Modify Views Tab -->
-                        <div t-if="state.activeTab === 'views'" class="tab-pane show active">
-                            <h5 class="fw-bold mb-3">Model Views</h5>
-                            <div class="list-group list-group-flush border rounded">
-                                <t t-foreach="state.views" t-as="view" t-key="view.id">
-                                    <div class="list-group-item py-2 px-3">
-                                        <div class="fw-bold text-capitalize text-dark"><t t-esc="view.type"/> View</div>
-                                        <div class="text-muted small font-monospace"><t t-esc="view.name"/></div>
-                                    </div>
-                                </t>
-                            </div>
-                        </div>
-
-                        <!-- Automations Tab -->
-                        <div t-if="state.activeTab === 'automations'" class="tab-pane show active">
-                            <h5 class="fw-bold mb-3">Automated Actions</h5>
-                            <button class="btn btn-primary btn-sm w-100 mb-3" t-on-click="() => this.rpc('/web_studio_ce/save_automation', { model_name: state.model, name: 'New Automation Rule', trigger_event: 'on_create' }).then(() => this.loadStudioContext())">
-                                Create Rule
-                            </button>
-                            <div class="list-group list-group-flush border rounded">
-                                <t t-foreach="state.automations" t-as="auto" t-key="auto.id">
-                                    <div class="list-group-item py-2 px-3">
-                                        <div class="fw-bold text-dark"><t t-esc="auto.name"/></div>
-                                        <small class="badge bg-secondary"><t t-esc="auto.trigger"/></small>
-                                    </div>
-                                </t>
-                            </div>
-                        </div>
-                    </div>
-                </aside>
+                <StudioCeSidebar activeTab="state.activeTab"
+                                 fields="state.fields"
+                                 views="state.views"
+                                 automations="state.automations"
+                                 selectedField="state.selectedField"
+                                 onTabChange="(tab) => state.activeTab = tab"
+                                 onSelectField="(field) => state.selectedField = field"
+                                 onDeselectField="() => state.selectedField = null"
+                                 onFieldUpdate.bind="onFieldUpdate"
+                                 onAddField.bind="addCustomField"
+                                 onAddFieldToView.bind="addFieldToView"
+                                 onAddAutomation.bind="addAutomationRule"
+                                 onRuleReload.bind="loadStudioContext"/>
 
                 <!-- Central Canvas Overlay -->
                 <main class="flex-grow-1 bg-light p-4 overflow-auto position-relative">
@@ -99,24 +43,32 @@
                         </div>
                     </div>
 
-                    <div class="card shadow-sm h-100">
-                        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0 fw-bold text-dark">Live View Editor Canvas</h5>
-                            <span class="badge bg-info text-white">Visual Mockup Mode</span>
+                    <t t-if="state.activeTab === 'security'">
+                        <SecurityEditor model="state.model"/>
+                    </t>
+                    <t t-else="">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0 fw-bold text-dark">Live View Editor Canvas</h5>
+                                <span class="badge bg-info text-white">Visual Mockup Mode</span>
+                            </div>
+                            <div class="card-body bg-white d-flex flex-column justify-content-center align-items-center border-dashed rounded m-3 p-5" style="border: 2px dashed #ccc;">
+                                <i class="oi oi-view-list text-muted mb-3" style="font-size: 3rem;"></i>
+                                <h4 class="text-muted fw-bold">Active Layout: <t t-esc="state.model"/></h4>
+                                <p class="text-muted text-center max-w-md">
+                                    Use the Properties panel on the left to add fields or rules. Dynamic changes will apply immediately to target metadata tables.
+                                </p>
+                            </div>
                         </div>
-                        <div class="card-body bg-white d-flex flex-column justify-content-center align-items-center border-dashed rounded m-3 p-5" style="border: 2px dashed #ccc;">
-                            <i class="oi oi-view-list text-muted mb-3" style="font-size: 3rem;"></i>
-                            <h4 class="text-muted fw-bold">Active Layout: <t t-esc="state.model"/></h4>
-                            <p class="text-muted text-center max-w-md">
-                                Use the Properties panel on the left to add fields or rules. Dynamic changes will apply immediately to target metadata tables.
-                            </p>
-                        </div>
-                    </div>
+                    </t>
                 </main>
             </div>
 
             <!-- Documentation Panel Overlay -->
             <StudioCeDocsPanel t-if="state.showDocs" onClose.bind="closeDocs"/>
+
+            <!-- App Creator Dialog Overlay -->
+            <AppCreator t-if="state.showAppCreator" onClose.bind="closeAppCreator" onAppCreated.bind="onAppCreated"/>
         </div>
     </t>
 </templates>

@@ -67,7 +67,7 @@ class StudioCeController(http.Controller):
         }
 
     @http.route('/web_studio_ce/add_field', type='json', auth='user')
-    def add_field(self, model_name, field_name, field_label, field_type, relation=None):
+    def add_field(self, model_name, field_name, field_label, field_type, relation=None, selection=None):
         """Creates a custom field dynamically on a model."""
         if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
             return {'error': 'Access Denied.'}
@@ -98,6 +98,8 @@ class StudioCeController(http.Controller):
         }
         if relation:
             vals['relation'] = relation
+        if selection:
+            vals['selection'] = selection
 
         new_field = request.env['ir.model.fields'].create(vals)
         
@@ -111,6 +113,7 @@ class StudioCeController(http.Controller):
             'field_description': new_field.field_description,
             'ttype': new_field.ttype,
             'relation': new_field.relation,
+            'selection': new_field.selection,
         }
 
     @http.route('/web_studio_ce/edit_view', type='json', auth='user')
@@ -169,3 +172,302 @@ class StudioCeController(http.Controller):
         }
         new_auto = request.env['base.automation'].create(vals)
         return {'id': new_auto.id, 'name': new_auto.name}
+
+    @http.route('/web_studio_ce/create_model', type='json', auth='user')
+    def create_model(self, model_label, model_name, parent_menu_id=None):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        if not model_name.startswith('x_'):
+            model_name = 'x_' + model_name
+
+        existing = request.env['ir.model'].search([('model', '=', model_name)])
+        if existing:
+            return {'error': f'Model {model_name} already exists.'}
+
+        # Create model
+        model = request.env['ir.model'].create({
+            'name': model_label,
+            'model': model_name,
+            'state': 'manual',
+            'is_studio_ce': True,
+        })
+
+        # Setup models & init registry to instantiate the table and dynamic fields (like x_name)
+        request.env.registry.setup_models(request.cr)
+        request.env.registry.init_models(request.cr, [model_name], request.context)
+
+        # Create default Form View
+        form_view = request.env['ir.ui.view'].create({
+            'name': f'{model_name}.form',
+            'model': model_name,
+            'type': 'form',
+            'is_studio_ce': True,
+            'arch': f'<form string="{model_label}"><sheet><group><field name="x_name"/></group></sheet></form>'
+        })
+
+        # Create default List View (Using <list> instead of <tree>)
+        list_view = request.env['ir.ui.view'].create({
+            'name': f'{model_name}.list',
+            'model': model_name,
+            'type': 'tree',
+            'is_studio_ce': True,
+            'arch': f'<list string="{model_label}"><field name="x_name"/></list>'
+        })
+
+        # Create default Search View
+        search_view = request.env['ir.ui.view'].create({
+            'name': f'{model_name}.search',
+            'model': model_name,
+            'type': 'search',
+            'is_studio_ce': True,
+            'arch': f'<search string="{model_label}"><field name="x_name"/></search>'
+        })
+
+        # Create Window Action (Use view_mode = 'list,form')
+        action = request.env['ir.actions.act_window'].create({
+            'name': model_label,
+            'res_model': model_name,
+            'view_mode': 'list,form',
+            'target': 'current',
+        })
+
+        # Create Menu
+        menu_vals = {
+            'name': model_label,
+            'action': f'ir.actions.act_window,{action.id}',
+            'is_studio_ce': True,
+        }
+        if parent_menu_id:
+            menu_vals['parent_id'] = parent_menu_id
+        else:
+            menu_vals['parent_id'] = request.env.ref('web_studio_ce.menu_studio_ce_root').id
+
+        menu = request.env['ir.ui.menu'].create(menu_vals)
+
+        # Refresh Odoo registry again
+        request.env.registry.setup_models(request.cr)
+        request.env.registry.init_models(request.cr, [model_name], request.context)
+
+        return {
+            'model_id': model.id,
+            'model_name': model_name,
+            'menu_id': menu.id,
+            'action_id': action.id,
+        }
+
+    @http.route('/web_studio_ce/save_view_arch', type='json', auth='user')
+    def save_view_arch(self, view_id, arch):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        view = request.env['ir.ui.view'].browse(view_id)
+        if not view.exists():
+            return {'error': 'View not found.'}
+
+        if view.is_studio_ce:
+            view.arch = arch
+        else:
+            # Create a child view (inherited)
+            inherited = request.env['ir.ui.view'].create({
+                'name': f'{view.name}_studio_ce_custom',
+                'model': view.model,
+                'inherit_id': view.id,
+                'mode': 'extension',
+                'is_studio_ce': True,
+                'arch': arch,
+            })
+            return {'studio_view_id': inherited.id, 'arch': inherited.arch}
+
+        return {'studio_view_id': view.id, 'arch': view.arch}
+
+    @http.route('/web_studio_ce/get_security_matrix', type='json', auth='user')
+    def get_security_matrix(self, model_name):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        model = request.env['ir.model'].search([('model', '=', model_name)], limit=1)
+        if not model:
+            return {'error': f'Model {model_name} not found.'}
+
+        # Fetch all ACLs for this model
+        acls = request.env['ir.model.access'].search([('model_id', '=', model.id)])
+        acl_data = []
+        for acl in acls:
+            acl_data.append({
+                'id': acl.id,
+                'name': acl.name,
+                'group_id': acl.group_id.id if acl.group_id else False,
+                'group_name': acl.group_id.display_name if acl.group_id else 'Global/All',
+                'read': acl.perm_read,
+                'write': acl.perm_write,
+                'create': acl.perm_create,
+                'unlink': acl.perm_unlink,
+            })
+
+        # Fetch all groups for dropdown
+        groups = request.env['res.groups'].search([])
+        group_list = [{'id': g.id, 'name': g.display_name} for g in groups]
+
+        return {
+            'acls': acl_data,
+            'groups': group_list,
+        }
+
+    @http.route('/web_studio_ce/save_security_matrix', type='json', auth='user')
+    def save_security_matrix(self, model_name, acls_to_save):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        model = request.env['ir.model'].search([('model', '=', model_name)], limit=1)
+        if not model:
+            return {'error': f'Model {model_name} not found.'}
+
+        for acl_vals in acls_to_save:
+            acl_id = acl_vals.get('id')
+            group_id = acl_vals.get('group_id')
+
+            vals = {
+                'name': acl_vals.get('name', f'access_{model_name}_{group_id or "global"}'),
+                'model_id': model.id,
+                'group_id': group_id,
+                'perm_read': acl_vals.get('read', True),
+                'perm_write': acl_vals.get('write', True),
+                'perm_create': acl_vals.get('create', True),
+                'perm_unlink': acl_vals.get('unlink', True),
+            }
+
+            if acl_id:
+                acl = request.env['ir.model.access'].browse(acl_id)
+                if acl.exists():
+                    acl.write(vals)
+            else:
+                request.env['ir.model.access'].create(vals)
+
+        return {'status': 'success'}
+
+    @http.route('/web_studio_ce/get_reports', type='json', auth='user')
+    def get_reports(self, model_name):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        reports = request.env['ir.actions.report'].search([('model', '=', model_name)])
+        report_data = []
+        for r in reports:
+            # Find the QWeb view template for this report
+            template_view = request.env['ir.ui.view'].search([('key', '=', r.report_name)], limit=1)
+            report_data.append({
+                'id': r.id,
+                'name': r.name,
+                'report_name': r.report_name,
+                'report_type': r.report_type,
+                'view_id': template_view.id if template_view else False,
+                'arch': template_view.arch if template_view else False,
+            })
+        return {'reports': report_data}
+
+    @http.route('/web_studio_ce/save_report_layout', type='json', auth='user')
+    def save_report_layout(self, view_id, arch):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        view = request.env['ir.ui.view'].browse(view_id)
+        if not view.exists():
+            return {'error': 'Report template view not found.'}
+
+        view.arch = arch
+        return {'status': 'success'}
+
+    @http.route('/web_studio_ce/get_menu_tree', type='json', auth='user')
+    def get_menu_tree(self):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        menus = request.env['ir.ui.menu'].search([('parent_id', '=', False)])
+
+        def build_tree(menu):
+            return {
+                'id': menu.id,
+                'name': menu.name,
+                'sequence': menu.sequence,
+                'parent_id': menu.parent_id.id if menu.parent_id else False,
+                'children': [build_tree(child) for child in menu.child_id.sorted('sequence')],
+            }
+
+        return [build_tree(m) for m in menus.sorted('sequence')]
+
+    @http.route('/web_studio_ce/save_menu', type='json', auth='user')
+    def save_menu(self, name, parent_id=None, sequence=10, action_id=None, menu_id=None):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        vals = {
+            'name': name,
+            'parent_id': parent_id,
+            'sequence': sequence,
+        }
+        if action_id:
+            vals['action'] = f'ir.actions.act_window,{action_id}'
+
+        if menu_id:
+            menu = request.env['ir.ui.menu'].browse(menu_id)
+            if menu.exists():
+                menu.write(vals)
+                return {'id': menu.id}
+        else:
+            vals['is_studio_ce'] = True
+            new_menu = request.env['ir.ui.menu'].create(vals)
+            return {'id': new_menu.id}
+
+    @http.route('/web_studio_ce/update_field_properties', type='json', auth='user')
+    def update_field_properties(self, field_name, model_name, vals):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        field = request.env['ir.model.fields'].search([
+            ('model', '=', model_name),
+            ('name', '=', field_name)
+        ], limit=1)
+        if not field:
+            return {'error': f'Field {field_name} not found.'}
+
+        # Map values to ir.model.fields field names
+        field_vals = {}
+        if 'field_description' in vals:
+            field_vals['field_description'] = vals['field_description']
+        if 'required' in vals:
+            field_vals['required'] = vals['required']
+        if 'readonly' in vals:
+            field_vals['readonly'] = vals['readonly']
+        if 'relation' in vals:
+            field_vals['relation'] = vals['relation']
+        if 'selectionOptions' in vals:
+            # Convert list of lists/tuples to string representation for selection options
+            field_vals['selection'] = str(vals['selectionOptions'])
+
+        if field_vals:
+            field.write(field_vals)
+            # Reload registry if critical properties changed
+            if any(k in field_vals for k in ['required', 'readonly', 'relation', 'selection']):
+                request.env.registry.setup_models(request.cr)
+                request.env.registry.init_models(request.cr, [model_name], request.context)
+
+        return {'status': 'success'}
+
+    @http.route('/web_studio_ce/update_automation', type='json', auth='user')
+    def update_automation(self, automation_id, vals):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        rule = request.env['base.automation'].browse(automation_id)
+        if not rule.exists():
+            return {'error': 'Rule not found.'}
+
+        update_vals = {}
+        if 'name' in vals:
+            update_vals['name'] = vals['name']
+        if 'trigger' in vals:
+            update_vals['trigger'] = vals['trigger']
+
+        rule.write(update_vals)
+        return {'status': 'success'}

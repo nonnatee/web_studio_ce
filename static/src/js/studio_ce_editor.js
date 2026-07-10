@@ -5,6 +5,8 @@ import { Component, useState, onWillStart } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 import { StudioCeDocsPanel } from "./studio_ce_docs";
 import { rpc } from "@web/core/network/rpc";
+import { AppCreator } from "./app_creator";
+import { SecurityEditor } from "./security_editor";
 
 export class StudioCeEditor extends Component {
     setup() {
@@ -19,6 +21,8 @@ export class StudioCeEditor extends Component {
             groups: [],
             loading: true,
             showDocs: false,
+            showAppCreator: false,
+            selectedField: null,
         });
 
         onWillStart(async () => {
@@ -92,6 +96,45 @@ export class StudioCeEditor extends Component {
         }
     }
 
+    async onFieldUpdate(fieldName, vals) {
+        this.state.loading = true;
+        try {
+            const result = await this.rpc("/web_studio_ce/update_field_properties", {
+                field_name: fieldName,
+                model_name: this.state.model,
+                vals: vals,
+            });
+            if (!result.error) {
+                await this.loadStudioContext();
+                // Update selectedField reference in state
+                const updated = this.state.fields.find(f => f.name === fieldName);
+                if (updated) {
+                    this.state.selectedField = updated;
+                }
+            }
+        } catch (error) {
+            console.error("Failed to update field properties", error);
+        } finally {
+            this.state.loading = false;
+        }
+    }
+
+    async addAutomationRule() {
+        this.state.loading = true;
+        try {
+            await this.rpc("/web_studio_ce/save_automation", {
+                model_name: this.state.model,
+                name: 'New Automation Rule',
+                trigger_event: 'on_create'
+            });
+            await this.loadStudioContext();
+        } catch (error) {
+            console.error("Failed to add automation rule", error);
+        } finally {
+            this.state.loading = false;
+        }
+    }
+
     openDocs() {
         this.state.showDocs = true;
     }
@@ -100,11 +143,26 @@ export class StudioCeEditor extends Component {
         this.state.showDocs = false;
     }
 
+    openAppCreator() {
+        this.state.showAppCreator = true;
+    }
+
+    closeAppCreator() {
+        this.state.showAppCreator = false;
+    }
+
+    async onAppCreated(modelName) {
+        this.state.model = modelName;
+        this.state.viewId = null;
+        this.state.showAppCreator = false;
+        await this.loadStudioContext();
+    }
+
     closeStudio() {
         this.actionService.doAction("web.action_main_menu");
     }
 }
 
 StudioCeEditor.template = "web_studio_ce.StudioCeEditor";
-StudioCeEditor.components = { StudioCeDocsPanel };
+StudioCeEditor.components = { StudioCeDocsPanel, AppCreator, SecurityEditor };
 registry.category("actions").add("web_studio_ce.editor_action", StudioCeEditor);

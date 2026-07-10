@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="web_studio_ce.AppCreator" owl="1">
+        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5); z-index: 1070;">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content shadow-lg border-0" style="border-radius: 12px; overflow: hidden;">
+                    
+                    <!-- Modal Header -->
+                    <div class="modal-header bg-dark text-white border-0 py-3 px-4 d-flex justify-content-between align-items-center">
+                        <h5 class="modal-title fw-bold">Create Custom Application</h5>
+                        <button type="button" class="btn-close btn-close-white" t-on-click="onClose" aria-label="Close"></button>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <div class="modal-body p-4 bg-light">
+                        <!-- Error Alert -->
+                        <div t-if="state.error" class="alert alert-danger py-2 px-3 mb-3 small d-flex align-items-center gap-2">
+                            <span>⚠️</span> <t t-esc="state.error"/>
+                        </div>
+
+                        <!-- Step 1: Info Form -->
+                        <t t-if="state.step === 1">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-secondary small">App Name</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       placeholder="e.g. Sales Tracker" 
+                                       t-model="state.appName"/>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-secondary small">Technical Model Name</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted">x_</span>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           placeholder="e.g. sales_tracker" 
+                                           t-model="state.modelTechnicalName"/>
+                                </div>
+                                <div class="form-text text-muted small">Only lowercase letters and underscores.</div>
+                            </div>
+
+                            <!-- App Icon Designer -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-secondary small">App Icon Preview</label>
+                                <div class="d-flex align-items-center gap-3 p-3 bg-white border rounded">
+                                    <div class="d-flex justify-content-center align-items-center text-white rounded shadow-sm"
+                                         t-attf-style="background-color: {{state.iconColor}}; width: 56px; height: 56px; font-size: 24px;">
+                                        <t t-esc="state.iconSymbol"/>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark" t-esc="state.appName || 'My Custom App'"/>
+                                        <small class="text-muted">x_<t t-esc="state.modelTechnicalName || 'model_name'"/></small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Select Symbols -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-secondary small">Select Icon Symbol</label>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <t t-foreach="symbols" t-as="sym" t-key="sym">
+                                        <button class="btn btn-sm btn-outline-secondary" 
+                                                t-att-class="state.iconSymbol === sym ? 'active bg-secondary text-white' : ''"
+                                                t-on-click="() => state.iconSymbol = sym"
+                                                t-esc="sym"/>
+                                    </t>
+                                </div>
+                            </div>
+
+                            <!-- Select Colors -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-secondary small">Select Accent Color</label>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <t t-foreach="colors" t-as="col" t-key="col">
+                                        <button class="btn rounded-circle p-0" 
+                                                t-attf-style="background-color: {{col}}; width: 28px; height: 28px; border: 2px solid {{state.iconColor === col ? '#ffffff' : 'transparent'}}; box-shadow: {{state.iconColor === col ? '0 0 0 2px #000' : 'none'}}"
+                                                t-on-click="() => state.iconColor = col"/>
+                                    </t>
+                                </div>
+                            </div>
+                        </t>
+
+                        <!-- Step 2: success -->
+                        <t t-if="state.step === 2">
+                            <div class="text-center py-4">
+                                <span style="font-size: 3rem;">🎉</span>
+                                <h4 class="fw-bold mt-2">Application Created!</h4>
+                                <p class="text-muted small">Your custom database structure, action, views, and menu item are successfully registered.</p>
+                            </div>
+                        </t>
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="modal-footer border-0 bg-white py-3 px-4 d-flex justify-content-end gap-2">
+                        <t t-if="state.step === 1">
+                            <button type="button" class="btn btn-secondary btn-sm" t-on-click="onClose">Cancel</button>
+                            <button type="button" 
+                                    class="btn btn-primary btn-sm d-flex align-items-center gap-1" 
+                                    t-on-click="createModel"
+                                    t-att-disabled="state.loading">
+                                <span t-if="state.loading" class="spinner-border spinner-border-sm" role="status"></span>
+                                Create App
+                            </button>
+                        </t>
+                        <t t-if="state.step === 2">
+                            <button type="button" class="btn btn-success btn-sm" t-on-click="onClose">Open Custom App workspace</button>
+                        </t>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>
