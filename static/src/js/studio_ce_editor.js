@@ -160,7 +160,7 @@ export class StudioCeEditor extends Component {
     }
 
     closeStudio() {
-        this.actionService.doAction("web.action_main_menu");
+        this.actionService.doAction("home");
     }
 }
 
