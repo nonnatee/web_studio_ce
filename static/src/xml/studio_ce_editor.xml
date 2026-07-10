@@ -26,6 +26,7 @@
                                  views="state.views"
                                  automations="state.automations"
                                  selectedField="state.selectedField"
+                                 modelName="state.model"
                                  onTabChange="(tab) => state.activeTab = tab"
                                  onSelectField="(field) => state.selectedField = field"
                                  onDeselectField="() => state.selectedField = null"

@@ -26,73 +26,78 @@
                             <button class="btn btn-sm btn-outline-secondary py-0 px-2" t-on-click="() => props.onDeselectField()">✕ Clear</button>
                         </div>
 
-                        <!-- Properties Inputs -->
-                        <div class="mb-3">
-                            <label class="form-label text-secondary small fw-bold">Field Label</label>
-                            <input type="text" class="form-control form-control-sm"
-                                   t-att-value="props.selectedField.field_description"
-                                   t-on-change="(ev) => this.updateProperty('field_description', ev.target.value)"/>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label text-secondary small fw-bold">Technical Name</label>
-                            <input type="text" class="form-control form-control-sm bg-light" readonly="1"
-                                   t-att-value="props.selectedField.name"/>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label text-secondary small fw-bold">Field Type</label>
-                            <input type="text" class="form-control form-control-sm bg-light text-capitalize" readonly="1"
-                                   t-att-value="props.selectedField.ttype"/>
-                        </div>
-
-                        <div class="form-check mb-2">
-                            <input type="checkbox" class="form-check-input" id="prop_req"
-                                   t-att-checked="props.selectedField.required"
-                                   t-on-change="(ev) => this.updateProperty('required', ev.target.checked)"/>
-                            <label class="form-check-label text-dark small" for="prop_req">Required field</label>
-                        </div>
-
-                        <div class="form-check mb-2">
-                            <input type="checkbox" class="form-check-input" id="prop_inv"
-                                   t-att-checked="props.selectedField.invisible"
-                                   t-on-change="(ev) => this.updateProperty('invisible', ev.target.checked)"/>
-                            <label class="form-check-label text-dark small" for="prop_inv">Invisible / Hidden</label>
-                        </div>
-
-                        <div class="form-check mb-4">
-                            <input type="checkbox" class="form-check-input" id="prop_ro"
-                                   t-att-checked="props.selectedField.readonly"
-                                   t-on-change="(ev) => this.updateProperty('readonly', ev.target.checked)"/>
-                            <label class="form-check-label text-dark small" for="prop_ro">Read-only field</label>
-                        </div>
-
-                        <!-- Relational Link -->
-                        <div t-if="['many2one', 'one2many', 'many2many'].includes(props.selectedField.ttype)" class="mb-3 border-top pt-3">
-                            <label class="form-label text-secondary small fw-bold">Related Model</label>
-                            <input type="text" class="form-control form-control-sm"
-                                   placeholder="e.g. res.partner"
-                                   t-att-value="props.selectedField.relation"
-                                   t-on-change="(ev) => this.updateProperty('relation', ev.target.value)"/>
-                        </div>
-
-                        <!-- Selection Options -->
-                        <div t-if="props.selectedField.ttype === 'selection'" class="mb-3 border-top pt-3">
-                            <label class="form-label text-secondary small fw-bold">Selection Options</label>
-                            <div class="list-group mb-2 border rounded">
-                                <t t-foreach="props.selectedField.selectionOptions || []" t-as="option" t-key="option[0]">
-                                    <div class="list-group-item d-flex justify-content-between align-items-center py-1 px-2 small bg-light">
-                                        <span><strong t-esc="option[0]"/>: <t t-esc="option[1]"/></span>
-                                        <button class="btn btn-sm text-danger p-0 border-0 bg-transparent font-weight-bold" t-on-click="() => this.removeSelectionOption(option[0])">✕</button>
-                                    </div>
-                                </t>
+                        <t t-if="props.selectedField.ttype === 'properties'">
+                            <PropertiesBuilder fieldName="props.selectedField.name" modelName="props.modelName"/>
+                        </t>
+                        <t t-else="">
+                            <!-- Properties Inputs -->
+                            <div class="mb-3">
+                                <label class="form-label text-secondary small fw-bold">Field Label</label>
+                                <input type="text" class="form-control form-control-sm"
+                                       t-att-value="props.selectedField.field_description"
+                                       t-on-change="(ev) => this.updateProperty('field_description', ev.target.value)"/>
                             </div>
-                            <div class="input-group input-group-sm mb-1">
-                                <input type="text" class="form-control" placeholder="Key" t-model="state.newOptionKey"/>
-                                <input type="text" class="form-control" placeholder="Label" t-model="state.newOptionValue"/>
-                                <button class="btn btn-primary" t-on-click="addSelectionOption">+</button>
+
+                            <div class="mb-3">
+                                <label class="form-label text-secondary small fw-bold">Technical Name</label>
+                                <input type="text" class="form-control form-control-sm bg-light" readonly="1"
+                                       t-att-value="props.selectedField.name"/>
                             </div>
-                        </div>
+
+                            <div class="mb-3">
+                                <label class="form-label text-secondary small fw-bold">Field Type</label>
+                                <input type="text" class="form-control form-control-sm bg-light text-capitalize" readonly="1"
+                                       t-att-value="props.selectedField.ttype"/>
+                            </div>
+
+                            <div class="form-check mb-2">
+                                <input type="checkbox" class="form-check-input" id="prop_req"
+                                       t-att-checked="props.selectedField.required"
+                                       t-on-change="(ev) => this.updateProperty('required', ev.target.checked)"/>
+                                <label class="form-check-label text-dark small" for="prop_req">Required field</label>
+                            </div>
+
+                            <div class="form-check mb-2">
+                                <input type="checkbox" class="form-check-input" id="prop_inv"
+                                       t-att-checked="props.selectedField.invisible"
+                                       t-on-change="(ev) => this.updateProperty('invisible', ev.target.checked)"/>
+                                <label class="form-check-label text-dark small" for="prop_inv">Invisible / Hidden</label>
+                            </div>
+
+                            <div class="form-check mb-4">
+                                <input type="checkbox" class="form-check-input" id="prop_ro"
+                                       t-att-checked="props.selectedField.readonly"
+                                       t-on-change="(ev) => this.updateProperty('readonly', ev.target.checked)"/>
+                                <label class="form-check-label text-dark small" for="prop_ro">Read-only field</label>
+                            </div>
+
+                            <!-- Relational Link -->
+                            <div t-if="['many2one', 'one2many', 'many2many'].includes(props.selectedField.ttype)" class="mb-3 border-top pt-3">
+                                <label class="form-label text-secondary small fw-bold">Related Model</label>
+                                <input type="text" class="form-control form-control-sm"
+                                       placeholder="e.g. res.partner"
+                                       t-att-value="props.selectedField.relation"
+                                       t-on-change="(ev) => this.updateProperty('relation', ev.target.value)"/>
+                            </div>
+
+                            <!-- Selection Options -->
+                            <div t-if="props.selectedField.ttype === 'selection'" class="mb-3 border-top pt-3">
+                                <label class="form-label text-secondary small fw-bold">Selection Options</label>
+                                <div class="list-group mb-2 border rounded">
+                                    <t t-foreach="props.selectedField.selectionOptions || []" t-as="option" t-key="option[0]">
+                                        <div class="list-group-item d-flex justify-content-between align-items-center py-1 px-2 small bg-light">
+                                            <span><strong t-esc="option[0]"/>: <t t-esc="option[1]"/></span>
+                                            <button class="btn btn-sm text-danger p-0 border-0 bg-transparent font-weight-bold" t-on-click="() => this.removeSelectionOption(option[0])">✕</button>
+                                        </div>
+                                    </t>
+                                </div>
+                                <div class="input-group input-group-sm mb-1">
+                                    <input type="text" class="form-control" placeholder="Key" t-model="state.newOptionKey"/>
+                                    <input type="text" class="form-control" placeholder="Label" t-model="state.newOptionValue"/>
+                                    <button class="btn btn-primary" t-on-click="addSelectionOption">+</button>
+                                </div>
+                            </div>
+                        </t>
                     </t>
 
                     <t t-else="">

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="web_studio_ce.PropertiesBuilder" owl="1">
+        <div class="o_studio_ce_properties_builder bg-white py-2">
+            <!-- Loading -->
+            <div t-if="state.loading" class="d-flex justify-content-center align-items-center py-4">
+                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+            </div>
+
+            <t t-else="">
+                <!-- Detail View (Selected Property Config) -->
+                <t t-if="state.selectedProperty">
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                        <span class="fw-bold text-dark small">Property Config</span>
+                        <button class="btn btn-sm btn-outline-secondary py-0 px-2" t-on-click="deselectProperty">✕ Back</button>
+                    </div>
+
+                    <!-- Label -->
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-bold">Field Label</label>
+                        <input type="text" class="form-control form-control-sm"
+                               t-att-value="state.selectedProperty.string"
+                               t-on-change="(ev) => this.updatePropValue(state.selectedProperty.name, 'string', ev.target.value)"/>
+                    </div>
+
+                    <!-- Type -->
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-bold">Type</label>
+                        <select class="form-select form-select-sm"
+                                t-att-value="state.selectedProperty.type"
+                                t-on-change="(ev) => this.updatePropValue(state.selectedProperty.name, 'type', ev.target.value)">
+                            <option value="char">Text (Char)</option>
+                            <option value="integer">Number (Integer)</option>
+                            <option value="boolean">Checkbox (Boolean)</option>
+                            <option value="selection">Selection Dropdown</option>
+                            <option value="many2one">Relation (Many2one)</option>
+                        </select>
+                    </div>
+
+                    <!-- Selection Choices Options -->
+                    <div t-if="state.selectedProperty.type === 'selection'" class="mb-3 border-top pt-2">
+                        <label class="form-label text-secondary small fw-bold">Selection Options</label>
+                        <div class="list-group mb-2 border rounded">
+                            <t t-foreach="state.selectedProperty.selection || []" t-as="opt" t-key="opt[0]">
+                                <div class="list-group-item d-flex justify-content-between align-items-center py-1 px-2 small bg-light">
+                                    <span><strong t-esc="opt[0]"/>: <t t-esc="opt[1]"/></span>
+                                    <button class="btn btn-sm text-danger p-0 border-0 bg-transparent" 
+                                            t-on-click="() => this.removeSelectionOption(state.selectedProperty.name, opt[0])">✕</button>
+                                </div>
+                            </t>
+                        </div>
+                        <div class="input-group input-group-sm mb-1">
+                            <input type="text" class="form-control" placeholder="Key" t-model="state.newSelKey"/>
+                            <input type="text" class="form-control" placeholder="Label" t-model="state.newSelVal"/>
+                            <button class="btn btn-primary" t-on-click="() => this.addSelectionOption(state.selectedProperty.name)">+</button>
+                        </div>
+                    </div>
+
+                    <!-- Relational target comodel -->
+                    <div t-if="state.selectedProperty.type === 'many2one'" class="mb-3 border-top pt-2">
+                        <label class="form-label text-secondary small fw-bold">Related Model</label>
+                        <input type="text" class="form-control form-control-sm"
+                               placeholder="e.g. res.partner"
+                               t-att-value="state.selectedProperty.comodel"
+                               t-on-change="(ev) => this.updatePropValue(state.selectedProperty.name, 'comodel', ev.target.value)"/>
+                    </div>
+                </t>
+
+                <!-- List View (Properties Index) -->
+                <t t-else="">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="fw-bold text-secondary small">Child Attributes</span>
+                        <button class="btn btn-outline-primary btn-sm py-0 px-2" t-on-click="addProperty">➕ Add Attribute</button>
+                    </div>
+
+                    <div class="list-group list-group-flush border rounded overflow-auto" style="max-height: 350px;">
+                        <t t-foreach="state.schema" t-as="prop" t-key="prop.name">
+                            <div class="list-group-item d-flex justify-content-between align-items-center py-2 px-3 bg-light bg-opacity-10">
+                                <div>
+                                    <div class="fw-bold text-dark text-truncate small" t-esc="prop.string"/>
+                                    <small class="badge bg-secondary" style="font-size:0.65rem;" t-esc="prop.type"/>
+                                </div>
+                                <!-- Actions / Controls -->
+                                <div class="d-flex align-items-center gap-1">
+                                    <!-- Order Buttons -->
+                                    <button class="btn btn-sm btn-link p-0 text-muted" t-on-click="() => this.reorder(state.schema.indexOf(prop), -1)">▲</button>
+                                    <button class="btn btn-sm btn-link p-0 text-muted me-2" t-on-click="() => this.reorder(state.schema.indexOf(prop), 1)">▼</button>
+                                    
+                                    <button class="btn btn-sm btn-primary py-0 px-2" t-on-click="() => this.selectProperty(prop)">Edit</button>
+                                    <button class="btn btn-sm btn-outline-danger py-0 px-2" t-on-click="() => this.deleteProperty(prop.name)">✕</button>
+                                </div>
+                            </div>
+                        </t>
+
+                        <!-- Empty State -->
+                        <div t-if="state.schema.length === 0" class="text-center text-muted py-4 small">
+                            <p class="mb-0">No dynamic properties defined for this category yet.</p>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </div>
+    </t>
+</templates>

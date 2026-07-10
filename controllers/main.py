@@ -500,3 +500,71 @@ class StudioCeController(http.Controller):
             })
 
         return models_data
+
+    @http.route('/web_studio_ce/get_properties_schema', type='json', auth='user')
+    def get_properties_schema(self, model_name, field_name):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        ModelClass = request.env.get(model_name)
+        if not ModelClass:
+            return {'error': f'Model {model_name} not found.'}
+
+        field_obj = ModelClass._fields.get(field_name)
+        if not field_obj or field_obj.type != 'properties':
+            return {'error': f'Field {field_name} is not a properties field.'}
+
+        definition_path = getattr(field_obj, 'definition', '')
+        if not definition_path or '.' not in definition_path:
+            return {'error': f'No valid definition path found for {field_name}.'}
+
+        rel_field_name, def_field_name = definition_path.split('.')
+
+        rel_field = ModelClass._fields.get(rel_field_name)
+        if not rel_field or not rel_field.comodel_name:
+            return {'error': f'Relation field {rel_field_name} not found.'}
+
+        comodel_name = rel_field.comodel_name
+        comodel = request.env[comodel_name]
+        parent_record = comodel.search([], limit=1)
+        if not parent_record:
+            # Create a fallback record
+            create_vals = {}
+            if 'name' in comodel._fields:
+                create_vals['name'] = 'Default Studio CE Properties Category'
+            parent_record = comodel.create(create_vals)
+
+        schema_data = parent_record[def_field_name] or []
+        return {'schema': schema_data}
+
+    @http.route('/web_studio_ce/save_properties_schema', type='json', auth='user')
+    def save_properties_schema(self, model_name, field_name, schema_json):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        ModelClass = request.env.get(model_name)
+        if not ModelClass:
+            return {'error': f'Model {model_name} not found.'}
+
+        field_obj = ModelClass._fields.get(field_name)
+        if not field_obj or field_obj.type != 'properties':
+            return {'error': f'Field {field_name} is not a properties field.'}
+
+        definition_path = getattr(field_obj, 'definition', '')
+        if not definition_path or '.' not in definition_path:
+            return {'error': f'No valid definition path found for {field_name}.'}
+
+        rel_field_name, def_field_name = definition_path.split('.')
+
+        rel_field = ModelClass._fields.get(rel_field_name)
+        comodel_name = rel_field.comodel_name
+        comodel = request.env[comodel_name]
+        parent_record = comodel.search([], limit=1)
+        if not parent_record:
+            create_vals = {}
+            if 'name' in comodel._fields:
+                create_vals['name'] = 'Default Studio CE Properties Category'
+            parent_record = comodel.create(create_vals)
+
+        parent_record.write({def_field_name: schema_json})
+        return {'status': 'success'}

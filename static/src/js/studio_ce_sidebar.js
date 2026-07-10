@@ -2,6 +2,7 @@
 
 import { Component, useState } from "@odoo/owl";
 import { AutomationEditor } from "./automation_editor";
+import { PropertiesBuilder } from "./properties_builder";
 
 export class StudioCeSidebar extends Component {
     setup() {
@@ -50,7 +51,7 @@ export class StudioCeSidebar extends Component {
 }
 
 StudioCeSidebar.template = "web_studio_ce.StudioCeSidebar";
-StudioCeSidebar.components = { AutomationEditor };
+StudioCeSidebar.components = { AutomationEditor, PropertiesBuilder };
 StudioCeSidebar.props = {
     activeTab: String,
     fields: Array,
@@ -65,4 +66,5 @@ StudioCeSidebar.props = {
     onSelectField: Function,
     onDeselectField: Function,
     onAddFieldToView: Function,
+    modelName: String,
 };
