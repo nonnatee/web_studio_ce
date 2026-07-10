@@ -231,3 +231,22 @@
         }
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Model Explorer Styling
+// ─────────────────────────────────────────────────────────────────────────────
+.o_studio_ce_model_explorer {
+    background-color: #f4f6f8;
+    height: 100vh;
+
+    .o_studio_ce_model_card {
+        transition: transform 0.22s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.22s cubic-bezier(0.25, 0.8, 0.25, 1);
+        background-color: #ffffff;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+
+        &:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.09) !important;
+        }
+    }
+}

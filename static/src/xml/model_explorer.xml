@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="web_studio_ce.ModelExplorer" owl="1">
+        <div class="o_studio_ce_model_explorer container-fluid d-flex flex-column h-100 bg-light p-0">
+            <!-- Navbar -->
+            <header class="navbar navbar-dark bg-dark text-white px-4 py-3 flex-shrink-0 d-flex justify-content-between align-items-center shadow-sm">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="font-size: 1.5rem;">🔍</span>
+                    <span class="navbar-brand fw-bold mb-0 h4">Model Explorer</span>
+                </div>
+                
+                <!-- Search Bar -->
+                <div class="d-flex align-items-center flex-grow-1 mx-5" style="max-width: 500px;">
+                    <input type="text" 
+                           class="form-control form-control-sm border-0 rounded-pill px-3 py-2 bg-secondary bg-opacity-25 text-white" 
+                           placeholder="Search models by name or description..." 
+                           t-model="state.searchQuery"/>
+                </div>
+
+                <button class="btn btn-outline-light btn-sm px-3" t-on-click="closeExplorer">✕ Close</button>
+            </header>
+
+            <!-- Main Area -->
+            <div class="flex-grow-1 overflow-auto p-4">
+                <!-- Loader -->
+                <div t-if="state.loading" class="d-flex justify-content-center align-items-center h-100">
+                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+
+                <t t-else="">
+                    <!-- Grid -->
+                    <div class="row g-3">
+                        <t t-foreach="filteredModels" t-as="model" t-key="model.id">
+                            <div class="col-md-4 col-sm-6">
+                                <div class="card h-100 border-0 shadow-sm o_studio_ce_model_card transition-all" style="border-radius: 10px; overflow: hidden;">
+                                    <div class="card-body p-4 d-flex flex-column">
+                                        <!-- Header of Card -->
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h5 class="fw-bold text-dark text-truncate mb-0" t-att-title="model.name"><t t-esc="model.name || 'Unnamed Model'"/></h5>
+                                            <span t-if="model.is_studio_ce" class="badge bg-success text-white small">Custom App</span>
+                                        </div>
+                                        
+                                        <!-- Technical Name -->
+                                        <div class="mb-3 text-muted small font-monospace text-truncate"><t t-esc="model.model"/></div>
+
+                                        <!-- Statistics -->
+                                        <div class="d-flex align-items-center gap-2 mb-4 mt-auto">
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary py-2 px-3 fw-bold border" style="font-size: 0.85rem;">
+                                                📊 <t t-esc="model.count"/> records
+                                            </span>
+                                        </div>
+
+                                        <!-- Actions -->
+                                        <div class="d-flex gap-2 mt-auto">
+                                            <button class="btn btn-primary btn-sm flex-grow-1" t-on-click="() => this.customizeModel(model.model)">
+                                                🎨 Edit View
+                                            </button>
+                                            <button class="btn btn-outline-secondary btn-sm flex-grow-1" t-on-click="() => this.viewRecords(model.model)">
+                                                👁️ View Records
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
+
+                        <!-- Empty State -->
+                        <div t-if="filteredModels.length === 0" class="col-12 text-center text-muted py-5 mt-5">
+                            <div style="font-size: 4rem;">🔍</div>
+                            <h4 class="fw-bold text-dark mt-3">No Models Found</h4>
+                            <p class="small">Try refining your search query to find the desired database model.</p>
+                        </div>
+                    </div>
+                </t>
+            </div>
+        </div>
+    </t>
+</templates>

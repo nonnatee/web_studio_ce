@@ -35,8 +35,15 @@
         <field name="params" eval="{'model': 'product.template'}"/>
     </record>
 
+    <!-- Action to open Model Explorer -->
+    <record id="action_model_explorer" model="ir.actions.client">
+        <field name="name">Model Explorer</field>
+        <field name="tag">web_studio_ce.model_explorer</field>
+    </record>
+
     <!-- Menu Items -->
     <menuitem id="menu_studio_ce_root" name="Studio CE" sequence="999" groups="web_studio_ce.group_studio_ce"/>
     <menuitem id="menu_studio_ce_editor" name="Open Editor" parent="menu_studio_ce_root" action="action_studio_ce_editor" sequence="1"/>
+    <menuitem id="menu_studio_ce_explorer" name="Model Explorer" parent="menu_studio_ce_root" action="action_model_explorer" sequence="5"/>
     <menuitem id="menu_studio_ce_export" name="Export Module" parent="menu_studio_ce_root" action="action_studio_ce_export" sequence="10"/>
 </odoo>

@@ -471,3 +471,32 @@ class StudioCeController(http.Controller):
 
         rule.write(update_vals)
         return {'status': 'success'}
+
+    @http.route('/web_studio_ce/get_models', type='json', auth='user')
+    def get_models(self):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        model_records = request.env['ir.model'].search([])
+        models_data = []
+        for model in model_records:
+            table_name = model.model.replace('.', '_')
+            count = 0
+            try:
+                request.cr.execute(f"SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = '{table_name}')")
+                table_exists = request.cr.fetchone()[0]
+                if table_exists:
+                    request.cr.execute(f"SELECT COUNT(*) FROM {table_name}")
+                    count = request.cr.fetchone()[0]
+            except Exception:
+                pass
+
+            models_data.append({
+                'id': model.id,
+                'name': model.name,
+                'model': model.model,
+                'count': count,
+                'is_studio_ce': model.is_studio_ce,
+            })
+
+        return models_data
