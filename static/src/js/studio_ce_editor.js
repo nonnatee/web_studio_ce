@@ -14,8 +14,10 @@ export class StudioCeEditor extends Component {
     setup() {
         this.actionService = useService("action");
         this.state = useState({
-            model: this.props.action.params.model || "res.partner",
-            viewId: this.props.action.params.view_id,
+            model: (this.props.action.params && this.props.action.params.model) || 
+                   (this.props.action.context && this.props.action.context.active_model) || 
+                   "res.partner",
+            viewId: this.props.action.params && this.props.action.params.view_id,
             activeTab: "views", // views, fields, reports, automations, security
             fields: [],
             views: [],
