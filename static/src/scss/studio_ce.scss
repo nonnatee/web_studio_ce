@@ -35,3 +35,199 @@
         transition: all 0.2s ease-in-out;
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Documentation Panel
+// ─────────────────────────────────────────────────────────────────────────────
+
+@keyframes studioCeDocsIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.o_studio_ce_docs {
+    background-color: #f8f9fa;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+    // ── Navbar ──
+    .o_studio_ce_docs_navbar {
+        background: linear-gradient(135deg, #1c1f22 0%, #2d3238 100%);
+        border-bottom: 1px solid #3a3f44;
+        min-height: 54px;
+    }
+
+    // ── Sidebar ──
+    .o_studio_ce_docs_sidebar {
+        width: 280px;
+        min-width: 280px;
+        background-color: #ffffff;
+        border-right: 1px solid #e0e4e8;
+
+        .o_studio_ce_docs_search {
+            background-color: #f4f6f8;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            padding-right: 2rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+
+            &:focus {
+                background-color: #ffffff;
+                border-color: #007bff;
+                box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.12);
+            }
+        }
+
+        .o_studio_ce_docs_topic_btn {
+            background-color: transparent;
+            color: #495057;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.15s ease;
+            cursor: pointer;
+
+            .topic-icon {
+                font-size: 1.05rem;
+                flex-shrink: 0;
+            }
+
+            &:hover {
+                background-color: #f0f4f8;
+                color: #1a1a1a;
+            }
+
+            &.active {
+                background-color: #e8f0fe;
+                color: #0d6efd;
+                font-weight: 600;
+                border-left: 3px solid #0d6efd;
+                padding-left: calc(0.75rem - 3px) !important;
+            }
+        }
+    }
+
+    // ── Content Area ──
+    .o_studio_ce_docs_content {
+        background-color: #ffffff;
+
+        .o_studio_ce_docs_topic_header {
+            background-color: #fafbfc;
+
+            h2 {
+                color: #1a1a2e;
+                font-size: 1.6rem;
+                letter-spacing: -0.02em;
+            }
+        }
+
+        .o_studio_ce_docs_section {
+            h4 {
+                font-size: 1.15rem;
+                color: #1a1a2e;
+                padding-bottom: 0.4rem;
+                border-bottom: 1px solid #f0f0f0;
+            }
+
+            .docs-text {
+                font-size: 0.925rem;
+                line-height: 1.7;
+                color: #374151;
+
+                code {
+                    background-color: #f1f3f5;
+                    color: #d63384;
+                    padding: 0.15em 0.4em;
+                    border-radius: 4px;
+                    font-size: 0.85em;
+                    font-family: "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+                }
+
+                strong {
+                    color: #1a1a2e;
+                }
+            }
+
+            .docs-list {
+                font-size: 0.925rem;
+                line-height: 1.7;
+                color: #374151;
+                padding-left: 1.25rem;
+
+                li {
+                    margin-bottom: 0.3rem;
+
+                    code {
+                        background-color: #f1f3f5;
+                        color: #d63384;
+                        padding: 0.15em 0.4em;
+                        border-radius: 4px;
+                        font-size: 0.85em;
+                        font-family: "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+                    }
+
+                    strong {
+                        color: #1a1a2e;
+                    }
+                }
+            }
+        }
+
+        // ── Code Blocks ──
+        .o_studio_ce_docs_codeblock {
+            background-color: #1e1e2e;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #313244;
+
+            pre {
+                padding: 1rem 1.25rem;
+                margin: 0;
+                overflow-x: auto;
+
+                code {
+                    color: #cdd6f4;
+                    font-family: "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+                    font-size: 0.8rem;
+                    line-height: 1.6;
+                    white-space: pre;
+                }
+            }
+        }
+
+        // ── Alerts ──
+        .alert-info {
+            background-color: #e8f4fd;
+            border-color: #b8daff;
+            color: #0c5460;
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+
+        .alert-warning {
+            background-color: #fff8e1;
+            border-color: #ffe082;
+            color: #856404;
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+    }
+
+    // ── Help Button in Editor Navbar ──
+    .o_studio_ce_help_btn {
+        transition: all 0.2s ease;
+        border-color: rgba(255, 255, 255, 0.3);
+        color: rgba(255, 255, 255, 0.85);
+
+        &:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.6);
+            color: #ffffff;
+        }
+    }
+}

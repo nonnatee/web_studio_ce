@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="web_studio_ce.StudioCeDocsPanel" owl="1">
+        <div class="o_studio_ce_docs position-fixed top-0 start-0 w-100 h-100 d-flex flex-column"
+             style="z-index: 1060; animation: studioCeDocsIn 0.25s ease-out;">
+
+            <!-- ─── Top Navbar ─── -->
+            <header class="o_studio_ce_docs_navbar navbar navbar-dark px-3 py-2 flex-shrink-0 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="navbar-brand fw-bold mb-0 h4 d-flex align-items-center gap-2">
+                        <span style="font-size: 1.3rem;">📖</span>
+                        Documentation
+                    </span>
+
+                    <!-- Doc Type Tabs -->
+                    <div class="btn-group btn-group-sm ms-3" role="group">
+                        <button type="button"
+                                class="btn btn-sm"
+                                t-att-class="state.activeDocType === 'user' ? 'btn-primary' : 'btn-outline-light'"
+                                t-on-click="() => this.switchDocType('user')">
+                            User Guide
+                        </button>
+                        <button type="button"
+                                class="btn btn-sm"
+                                t-att-class="state.activeDocType === 'dev' ? 'btn-primary' : 'btn-outline-light'"
+                                t-on-click="() => this.switchDocType('dev')">
+                            Developer Docs
+                        </button>
+                    </div>
+                </div>
+
+                <button class="btn btn-outline-light btn-sm d-flex align-items-center gap-1" t-on-click="close">
+                    <span>✕</span> Close Docs
+                </button>
+            </header>
+
+            <!-- ─── Main Content Area ─── -->
+            <div class="d-flex flex-grow-1 overflow-hidden">
+
+                <!-- ─── Left Sidebar (TOC) ─── -->
+                <aside class="o_studio_ce_docs_sidebar d-flex flex-column flex-shrink-0 h-100">
+                    <!-- Search Bar -->
+                    <div class="p-3 border-bottom">
+                        <div class="position-relative">
+                            <input type="text"
+                                   class="form-control form-control-sm o_studio_ce_docs_search"
+                                   placeholder="Search documentation..."
+                                   t-att-value="state.searchQuery"
+                                   t-on-input="onSearchInput"/>
+                            <span class="position-absolute top-50 end-0 translate-middle-y pe-2 text-muted" style="font-size: 0.85rem;">🔍</span>
+                        </div>
+                    </div>
+
+                    <!-- Topic List -->
+                    <nav class="flex-grow-1 overflow-auto p-2">
+                        <t t-foreach="filteredTopics" t-as="topic" t-key="topic.id">
+                            <button class="o_studio_ce_docs_topic_btn w-100 text-start border-0 rounded px-3 py-2 mb-1 d-flex align-items-center gap-2"
+                                    t-att-class="activeTopic and activeTopic.id === topic.id ? 'active' : ''"
+                                    t-on-click="() => this.selectTopic(topic.id)">
+                                <span class="topic-icon" t-esc="topic.icon"/>
+                                <span class="topic-title text-truncate" t-esc="topic.title"/>
+                            </button>
+                        </t>
+
+                        <div t-if="filteredTopics.length === 0" class="text-center text-muted py-4 px-3">
+                            <div style="font-size: 2rem; opacity: 0.4;">🔍</div>
+                            <small>No matching topics found.</small>
+                        </div>
+                    </nav>
+
+                    <!-- Sidebar Footer -->
+                    <div class="p-3 border-top text-center">
+                        <small class="text-muted">
+                            Odoo Studio <strong class="text-primary">CE</strong> v1.0
+                        </small>
+                    </div>
+                </aside>
+
+                <!-- ─── Right Content Area ─── -->
+                <main class="o_studio_ce_docs_content flex-grow-1 overflow-auto p-0">
+                    <t t-if="activeTopic">
+                        <!-- Topic Header -->
+                        <div class="o_studio_ce_docs_topic_header px-4 pt-4 pb-3 border-bottom">
+                            <div class="d-flex align-items-center gap-3">
+                                <span style="font-size: 2rem;" t-esc="activeTopic.icon"/>
+                                <div>
+                                    <h2 class="fw-bold mb-1" t-esc="activeTopic.title"/>
+                                    <small class="text-muted">
+                                        <t t-esc="state.activeDocType === 'user' ? 'User Guide' : 'Developer Documentation'"/>
+                                        <span class="mx-1">·</span>
+                                        <t t-esc="activeTopic.sections.length"/> sections
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sections -->
+                        <div class="px-4 py-3">
+                            <t t-foreach="activeTopic.sections" t-as="section" t-key="section.heading">
+                                <div class="o_studio_ce_docs_section mb-4">
+                                    <h4 class="fw-bold mb-2 text-dark" t-esc="section.heading"/>
+                                    <div class="docs-text mb-2" t-out="section.content"/>
+
+                                    <!-- Bullet List -->
+                                    <ul t-if="section.list" class="docs-list mb-2">
+                                        <t t-foreach="section.list" t-as="item" t-key="item_index">
+                                            <li class="mb-1" t-out="item"/>
+                                        </t>
+                                    </ul>
+
+                                    <!-- Code Block -->
+                                    <div t-if="section.code" class="o_studio_ce_docs_codeblock mb-2">
+                                        <pre class="mb-0"><code t-esc="section.code"/></pre>
+                                    </div>
+
+                                    <!-- Tip Alert -->
+                                    <div t-if="section.tip" class="alert alert-info d-flex align-items-start gap-2 mb-2 py-2 px-3">
+                                        <span class="flex-shrink-0" style="font-size: 1.1rem;">💡</span>
+                                        <div class="small" t-out="section.tip"/>
+                                    </div>
+
+                                    <!-- Warning Alert -->
+                                    <div t-if="section.warning" class="alert alert-warning d-flex align-items-start gap-2 mb-2 py-2 px-3">
+                                        <span class="flex-shrink-0" style="font-size: 1.1rem;">⚠️</span>
+                                        <div class="small" t-out="section.warning"/>
+                                    </div>
+                                </div>
+                            </t>
+
+                            <!-- Navigation Footer -->
+                            <div class="border-top pt-3 mt-4 d-flex justify-content-between">
+                                <t t-set="currentIdx" t-value="topics.findIndex(t => activeTopic and t.id === activeTopic.id)"/>
+                                <button t-if="currentIdx > 0"
+                                        class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1"
+                                        t-on-click="() => this.selectTopic(this.topics[currentIdx - 1].id)">
+                                    <span>←</span> <span t-esc="topics[currentIdx - 1].title"/>
+                                </button>
+                                <span t-else=""/>
+                                <button t-if="currentIdx >= 0 and currentIdx &lt; topics.length - 1"
+                                        class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
+                                        t-on-click="() => this.selectTopic(this.topics[currentIdx + 1].id)">
+                                    <span t-esc="topics[currentIdx + 1].title"/> <span>→</span>
+                                </button>
+                            </div>
+                        </div>
+                    </t>
+
+                    <!-- Empty state -->
+                    <div t-else="" class="d-flex flex-column justify-content-center align-items-center h-100 text-muted">
+                        <div style="font-size: 3rem; opacity: 0.3;">📄</div>
+                        <p>Select a topic from the sidebar</p>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </t>
+</templates>

@@ -8,7 +8,12 @@
                     <span class="navbar-brand fw-bold mb-0 h4">Odoo Studio <span class="text-primary">CE</span></span>
                     <span class="badge bg-secondary ms-3"><t t-esc="state.model"/></span>
                 </div>
-                <button class="btn btn-outline-danger btn-sm" t-on-click="closeStudio">Close Studio</button>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-outline-light btn-sm o_studio_ce_help_btn d-flex align-items-center gap-1" t-on-click="openDocs">
+                        <span>📖</span> Help
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" t-on-click="closeStudio">Close Studio</button>
+                </div>
             </header>
 
             <!-- Main Workspace -->
@@ -109,6 +114,9 @@
                     </div>
                 </main>
             </div>
+
+            <!-- Documentation Panel Overlay -->
+            <StudioCeDocsPanel t-if="state.showDocs" onClose.bind="closeDocs"/>
         </div>
     </t>
 </templates>

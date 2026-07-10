@@ -3,6 +3,7 @@
 import { registry } from "@web/core/registry";
 import { Component, useState, onWillStart } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
+import { StudioCeDocsPanel } from "./studio_ce_docs";
 
 export class StudioCeEditor extends Component {
     setup() {
@@ -17,6 +18,7 @@ export class StudioCeEditor extends Component {
             automations: [],
             groups: [],
             loading: true,
+            showDocs: false,
         });
 
         onWillStart(async () => {
@@ -86,10 +88,19 @@ export class StudioCeEditor extends Component {
         }
     }
 
+    openDocs() {
+        this.state.showDocs = true;
+    }
+
+    closeDocs() {
+        this.state.showDocs = false;
+    }
+
     closeStudio() {
         this.actionService.doAction("web.action_main_menu");
     }
 }
 
 StudioCeEditor.template = "web_studio_ce.StudioCeEditor";
+StudioCeEditor.components = { StudioCeDocsPanel };
 registry.category("actions").add("web_studio_ce.editor_action", StudioCeEditor);
