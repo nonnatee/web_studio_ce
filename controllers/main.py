@@ -30,12 +30,19 @@ class StudioCeController(http.Controller):
         # Views
         views_data = []
         domain = [('model', '=', model_name), ('type', 'in', ['form', 'tree', 'search'])]
-        for view in request.env['ir.ui.view'].search(domain):
+        views = request.env['ir.ui.view'].search(domain)
+        # Prioritize base views (non-inherited) so they appear first
+        views = views.sorted(key=lambda v: 0 if not v.inherit_id else 1)
+        for view in views:
+            try:
+                arch = view.get_combined_arch()
+            except Exception:
+                arch = view.arch
             views_data.append({
                 'id': view.id,
                 'name': view.name,
                 'type': view.type,
-                'arch': view.arch,
+                'arch': arch,
                 'is_studio_ce': view.is_studio_ce,
             })
 

@@ -210,6 +210,11 @@ export class StudioCeEditor extends Component {
         this.state.selectedField = null;
     }
 
+    onViewChange(viewId) {
+        this.state.viewId = viewId;
+        this.loadStudioContext();
+    }
+
     async onFieldUpdate(fieldName, vals) {
         this.state.loading = true;
         try {

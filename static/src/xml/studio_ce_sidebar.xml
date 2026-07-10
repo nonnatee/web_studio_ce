@@ -171,7 +171,8 @@
                     <h5 class="fw-bold mb-3">Model Views</h5>
                     <div class="list-group list-group-flush border rounded">
                         <t t-foreach="props.views" t-as="view" t-key="view.id">
-                            <div class="list-group-item py-2 px-3">
+                            <div class="list-group-item list-group-item-action py-2 px-3 cursor-pointer"
+                                 t-on-click="() => props.onViewChange(view.id)">
                                 <div class="fw-bold text-capitalize text-dark small"><t t-esc="view.type"/> View</div>
                                 <div class="text-muted font-monospace" style="font-size:0.75rem;"><t t-esc="view.name"/></div>
                             </div>

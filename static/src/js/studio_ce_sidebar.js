@@ -73,5 +73,6 @@ StudioCeSidebar.props = {
     onDeselectField: Function,
     onOverrideProperty: Function,
     onRevertLog: Function,
+    onViewChange: Function,
     modelName: String,
 };
