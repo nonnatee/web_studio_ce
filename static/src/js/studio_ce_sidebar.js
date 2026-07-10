@@ -62,7 +62,7 @@ StudioCeSidebar.props = {
     views: Array,
     automations: Array,
     logs: Array,
-    selectedField: { type: [Object, Boolean], optional: true },
+    selectedField: { type: true, optional: true },
     onFieldUpdate: Function,
     onAddField: Function,
     onAddFieldToView: Function,

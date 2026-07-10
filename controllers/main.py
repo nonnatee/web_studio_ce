@@ -31,13 +31,18 @@ class StudioCeController(http.Controller):
         views_data = []
         domain = [('model', '=', model_name), ('type', 'in', ['form', 'tree', 'search'])]
         views = request.env['ir.ui.view'].search(domain)
-        # Prioritize base views (non-inherited) so they appear first
-        views = views.sorted(key=lambda v: 0 if not v.inherit_id else 1)
-        for view in views:
-            try:
-                arch = view.get_combined_arch()
-            except Exception:
-                arch = view.arch
+        # Sort base views (non-inherited) first manually
+        base_views = [v for v in views if not v.inherit_id]
+        inherited_views = [v for v in views if v.inherit_id]
+        sorted_views = base_views + inherited_views
+        
+        for view in sorted_views:
+            arch = view.arch
+            if not view.inherit_id:
+                try:
+                    arch = view._get_combined_arch()
+                except Exception:
+                    arch = view.arch
             views_data.append({
                 'id': view.id,
                 'name': view.name,
