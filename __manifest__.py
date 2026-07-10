@@ -30,8 +30,6 @@ It enables dynamic modification of fields, views, PDF report templates, automate
             '/web_studio_ce/static/src/js/automation_editor.js',
             '/web_studio_ce/static/src/js/security_editor.js',
             '/web_studio_ce/static/src/js/studio_ce_docs.js',
-        ],
-        'web.assets_qweb': [
             '/web_studio_ce/static/src/xml/studio_ce_editor.xml',
             '/web_studio_ce/static/src/xml/studio_ce_sidebar.xml',
             '/web_studio_ce/static/src/xml/report_editor.xml',
