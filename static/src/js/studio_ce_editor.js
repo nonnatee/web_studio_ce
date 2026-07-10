@@ -198,6 +198,18 @@ export class StudioCeEditor extends Component {
         this.canvasInstance = canvasInstance;
     }
 
+    onTabChange(tab) {
+        this.state.activeTab = tab;
+    }
+
+    onSelectField(field) {
+        this.state.selectedField = field;
+    }
+
+    onDeselectField() {
+        this.state.selectedField = null;
+    }
+
     async onFieldUpdate(fieldName, vals) {
         this.state.loading = true;
         try {

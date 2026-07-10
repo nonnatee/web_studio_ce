@@ -29,7 +29,10 @@ export class StudioCeCanvas extends Component {
         }
     }
 
-    updateArchTree(archXml = this.props.view ? this.props.view.arch : "") {
+    updateArchTree(archXml) {
+        if (archXml === undefined) {
+            archXml = this.props.view ? this.props.view.arch : "";
+        }
         if (!archXml) {
             this.state.archTree = [];
             return;
