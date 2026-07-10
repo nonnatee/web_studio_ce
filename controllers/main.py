@@ -55,10 +55,14 @@ class StudioCeController(http.Controller):
             # Groups (for security panel)
             groups_data = []
             for group in request.env['res.groups'].search([]):
+                # Odoo 19 uses privilege_id; older versions use category_id
+                privilege = getattr(group, 'privilege_id', False)
+                category = getattr(group, 'category_id', False)
+                category_name = (privilege and privilege.name) or (category and category.name) or 'Other'
                 groups_data.append({
                     'id': group.id,
                     'display_name': group.display_name,
-                    'category_name': group.category_id.name or 'Other',
+                    'category_name': category_name,
                 })
 
             # Automations
