@@ -264,5 +264,5 @@ export class StudioCeEditor extends Component {
 }
 
 StudioCeEditor.template = "web_studio_ce.StudioCeEditor";
-StudioCeEditor.components = { StudioCeDocsPanel, AppCreator, SecurityEditor, StudioCeSidebar };
+StudioCeEditor.components = { StudioCeDocsPanel, AppCreator, SecurityEditor, StudioCeSidebar, StudioCeCanvas };
 registry.category("actions").add("web_studio_ce.editor_action", StudioCeEditor);
