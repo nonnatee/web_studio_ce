@@ -36,7 +36,8 @@
                                  onAddFieldToView.bind="addFieldToView"
                                  onAddAutomation.bind="addAutomationRule"
                                  onRuleReload.bind="loadStudioContext"
-                                 onRevertLog.bind="revertLog"/>
+                                 onRevertLog.bind="revertLog"
+                                 onOverrideProperty.bind="overrideViewFieldProperty"/>
 
                 <!-- Central Canvas Overlay -->
                 <main class="flex-grow-1 bg-light p-4 overflow-auto position-relative">
