@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="category_studio_ce" model="ir.module.category">
+            <field name="name">Studio CE</field>
+            <field name="sequence">99</field>
+        </record>
+
+        <record model="res.groups.privilege" id="res_groups_privilege_studio_ce">
+            <field name="name">Studio CE</field>
+            <field name="category_id" ref="category_studio_ce"/>
+            <field name="sequence">99</field>
+        </record>
+
+        <record id="group_studio_ce" model="res.groups">
+            <field name="name">Studio Administrator</field>
+            <field name="privilege_id" ref="res_groups_privilege_studio_ce"/>
+            <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+            <field name="user_ids" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+        </record>
+    </data>
+</odoo>

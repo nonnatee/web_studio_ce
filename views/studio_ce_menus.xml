@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Export Wizard Form View -->
+    <record id="view_studio_ce_export_form" model="ir.ui.view">
+        <field name="name">studio.ce.export.form</field>
+        <field name="model">studio.ce.export</field>
+        <field name="arch" type="xml">
+            <form string="Export Studio CE Customizations">
+                <sheet>
+                    <group>
+                        <field name="name" required="1"/>
+                        <field name="zip_file" filename="name"/>
+                    </group>
+                    <footer>
+                        <button name="action_export_zip" string="Export ZIP" type="object" class="btn-primary"/>
+                        <button string="Close" class="btn-secondary" special="cancel"/>
+                    </footer>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action to open Export Wizard -->
+    <record id="action_studio_ce_export" model="ir.actions.act_window">
+        <field name="name">Export Customizations</field>
+        <field name="res_model">studio.ce.export</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- Menu Items -->
+    <menuitem id="menu_studio_ce_root" name="Studio CE" sequence="999" groups="web_studio_ce.group_studio_ce"/>
+    <menuitem id="menu_studio_ce_export" name="Export Module" parent="menu_studio_ce_root" action="action_studio_ce_export" sequence="10"/>
+</odoo>
