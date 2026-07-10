@@ -4,10 +4,10 @@ import { registry } from "@web/core/registry";
 import { Component, useState, onWillStart } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 import { StudioCeDocsPanel } from "./studio_ce_docs";
+import { rpc } from "@web/core/network/rpc";
 
 export class StudioCeEditor extends Component {
     setup() {
-        this.rpc = useService("rpc");
         this.actionService = useService("action");
         this.state = useState({
             model: this.props.action.params.model || "res.partner",
@@ -24,6 +24,10 @@ export class StudioCeEditor extends Component {
         onWillStart(async () => {
             await this.loadStudioContext();
         });
+    }
+
+    async rpc(route, params) {
+        return rpc(route, params);
     }
 
     async loadStudioContext() {

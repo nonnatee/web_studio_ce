@@ -525,7 +525,7 @@ Response:
                 heading: "OWL Component Lifecycle",
                 content: `The <code>StudioCeEditor</code> component follows the OWL lifecycle:`,
                 list: [
-                    "<strong>setup()</strong> — Initializes services (<code>useService('rpc')</code>, <code>useService('action')</code>) and reactive state via <code>useState()</code>.",
+                    "<strong>setup()</strong> — Initializes services (<code>useService('action')</code>), imports <code>rpc</code> from <code>@web/core/network/rpc</code>, and initializes reactive state via <code>useState()</code>.",
                     "<strong>onWillStart()</strong> — Async hook that calls <code>loadStudioContext()</code> to fetch model metadata before the first render.",
                     "<strong>Reactive rendering</strong> — State changes trigger automatic re-renders. The <code>state</code> object is reactive thanks to OWL's <code>useState</code>.",
                 ],
@@ -546,10 +546,10 @@ Response:
 });`,
             },
             {
-                heading: "Service Hooks",
-                content: `Studio CE uses two OWL service hooks:`,
+                heading: "Services and Network Calls",
+                content: `Studio CE uses standard Odoo services and utilities:`,
                 list: [
-                    "<code>useService('rpc')</code> — For JSON-RPC calls to Studio CE controller endpoints.",
+                    "<code>rpc</code> — Imported directly from <code>@web/core/network/rpc</code> to perform JSON-RPC requests to the backend.",
                     "<code>useService('action')</code> — For triggering Odoo client actions (e.g., navigating away via <code>doAction</code>).",
                 ],
             },
