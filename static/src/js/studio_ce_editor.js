@@ -7,6 +7,7 @@ import { StudioCeDocsPanel } from "./studio_ce_docs";
 import { rpc } from "@web/core/network/rpc";
 import { AppCreator } from "./app_creator";
 import { SecurityEditor } from "./security_editor";
+import { StudioCeSidebar } from "./studio_ce_sidebar";
 
 export class StudioCeEditor extends Component {
     setup() {
@@ -164,5 +165,5 @@ export class StudioCeEditor extends Component {
 }
 
 StudioCeEditor.template = "web_studio_ce.StudioCeEditor";
-StudioCeEditor.components = { StudioCeDocsPanel, AppCreator, SecurityEditor };
+StudioCeEditor.components = { StudioCeDocsPanel, AppCreator, SecurityEditor, StudioCeSidebar };
 registry.category("actions").add("web_studio_ce.editor_action", StudioCeEditor);
