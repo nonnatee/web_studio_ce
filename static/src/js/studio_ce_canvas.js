@@ -107,7 +107,7 @@ StudioCeCanvas.template = "web_studio_ce.StudioCeCanvas";
 StudioCeCanvas.props = {
     view: { type: Object, optional: true },
     fields: Array,
-    selectedField: { type: Object, optional: true },
+    selectedField: { type: true, optional: true },
     onSelectField: Function,
     onToggleVisibility: Function,
     onInsertField: Function,
