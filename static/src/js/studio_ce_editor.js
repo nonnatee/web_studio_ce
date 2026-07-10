@@ -16,7 +16,7 @@ export class StudioCeEditor extends Component {
         this.state = useState({
             model: (this.props.action.params && this.props.action.params.model) || 
                    (this.props.action.context && this.props.action.context.active_model) || 
-                   "res.partner",
+                   "product.template",
             viewId: this.props.action.params && this.props.action.params.view_id,
             activeTab: "views", // views, fields, reports, automations, security
             fields: [],

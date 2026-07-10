@@ -29,7 +29,7 @@ class StudioCeController(http.Controller):
 
         # Views
         views_data = []
-        domain = [('model', '=', model_name), ('type', 'in', ['form', 'tree', 'search'])]
+        domain = [('model', '=', model_name), ('type', 'in', ['form', 'list', 'tree', 'search'])]
         views = request.env['ir.ui.view'].search(domain)
         # Sort base views (non-inherited) first manually
         base_views = [v for v in views if not v.inherit_id]
@@ -258,7 +258,7 @@ class StudioCeController(http.Controller):
         list_view = request.env['ir.ui.view'].create({
             'name': f'{model_name}.list',
             'model': model_name,
-            'type': 'tree',
+            'type': 'list',
             'is_studio_ce': True,
             'arch': f'<list string="{model_label}"><field name="x_name"/></list>'
         })

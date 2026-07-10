@@ -13,6 +13,7 @@ It enables dynamic modification of fields, views, PDF report templates, automate
         'web',
         'base_automation',
         'mail',
+        'product',
     ],
     'data': [
         'security/security.xml',
