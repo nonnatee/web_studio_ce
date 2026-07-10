@@ -11,72 +11,78 @@ class StudioCeController(http.Controller):
         if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
             return {'error': 'Access Denied: Studio CE Administrator permissions required.'}
 
-        model = request.env['ir.model'].search([('model', '=', model_name)], limit=1)
-        if not model:
-            return {'error': f'Model {model_name} not found.'}
+        try:
+            model = request.env['ir.model'].search([('model', '=', model_name)], limit=1)
+            if not model:
+                return {'error': f'Model {model_name} not found.'}
 
-        # Fields
-        fields_data = []
-        for field in request.env['ir.model.fields'].search([('model_id', '=', model.id)]):
-            fields_data.append({
-                'id': field.id,
-                'name': field.name,
-                'field_description': field.field_description,
-                'ttype': field.ttype,
-                'relation': field.relation,
-                'is_studio_ce': field.is_studio_ce,
-            })
+            # Fields
+            fields_data = []
+            for field in request.env['ir.model.fields'].search([('model_id', '=', model.id)]):
+                fields_data.append({
+                    'id': field.id,
+                    'name': field.name,
+                    'field_description': field.field_description,
+                    'ttype': field.ttype,
+                    'relation': field.relation,
+                    'is_studio_ce': field.is_studio_ce,
+                })
 
-        # Views
-        views_data = []
-        domain = [('model', '=', model_name), ('type', 'in', ['form', 'list', 'tree', 'search'])]
-        views = request.env['ir.ui.view'].search(domain)
-        # Sort base views (non-inherited) first manually
-        base_views = [v for v in views if not v.inherit_id]
-        inherited_views = [v for v in views if v.inherit_id]
-        sorted_views = base_views + inherited_views
-        
-        for view in sorted_views:
-            arch = view.arch
-            if not view.inherit_id:
-                try:
-                    arch = view._get_combined_arch()
-                except Exception:
-                    arch = view.arch
-            views_data.append({
-                'id': view.id,
-                'name': view.name,
-                'type': view.type,
-                'arch': arch,
-                'is_studio_ce': view.is_studio_ce,
-            })
+            # Views
+            views_data = []
+            domain = [('model', '=', model_name), ('type', 'in', ['form', 'list', 'tree', 'search'])]
+            views = request.env['ir.ui.view'].search(domain)
+            # Sort base views (non-inherited) first manually
+            base_views = [v for v in views if not v.inherit_id]
+            inherited_views = [v for v in views if v.inherit_id]
+            sorted_views = base_views + inherited_views
 
-        # Groups (for security panel)
-        groups_data = []
-        for group in request.env['res.groups'].search([]):
-            groups_data.append({
-                'id': group.id,
-                'display_name': group.display_name,
-                'category_name': group.category_id.name or 'Other',
-            })
+            for view in sorted_views:
+                arch = view.arch
+                if not view.inherit_id:
+                    try:
+                        arch = view._get_combined_arch()
+                    except Exception:
+                        arch = view.arch
+                views_data.append({
+                    'id': view.id,
+                    'name': view.name,
+                    'type': view.type,
+                    'arch': arch,
+                    'is_studio_ce': view.is_studio_ce,
+                })
 
-        # Automations
-        automations_data = []
-        for auto in request.env['base.automation'].search([('model_id', '=', model.id)]):
-            automations_data.append({
-                'id': auto.id,
-                'name': auto.name,
-                'trigger': auto.trigger,
-                'is_studio_ce': auto.is_studio_ce,
-            })
+            # Groups (for security panel)
+            groups_data = []
+            for group in request.env['res.groups'].search([]):
+                groups_data.append({
+                    'id': group.id,
+                    'display_name': group.display_name,
+                    'category_name': group.category_id.name or 'Other',
+                })
 
-        return {
-            'model_id': model.id,
-            'fields': fields_data,
-            'views': views_data,
-            'groups': groups_data,
-            'automations': automations_data,
-        }
+            # Automations
+            automations_data = []
+            for auto in request.env['base.automation'].search([('model_id', '=', model.id)]):
+                automations_data.append({
+                    'id': auto.id,
+                    'name': auto.name,
+                    'trigger': auto.trigger,
+                    'is_studio_ce': auto.is_studio_ce,
+                })
+
+            return {
+                'model_id': model.id,
+                'fields': fields_data,
+                'views': views_data,
+                'groups': groups_data,
+                'automations': automations_data,
+            }
+        except Exception as e:
+            import logging
+            _logger = logging.getLogger(__name__)
+            _logger.exception("Failed to load Studio CE context for model '%s'", model_name)
+            return {'error': f'Server error loading context for {model_name}: {str(e)}'}
 
     @http.route('/web_studio_ce/add_field', type='json', auth='user')
     def add_field(self, model_name, field_name, field_label, field_type, relation=None, selection=None):
