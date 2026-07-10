@@ -169,8 +169,8 @@ export class StudioCeEditor extends Component {
 
     async addFieldToView(viewId, fieldName) {
         const field = this.state.fields.find(f => f.name === fieldName);
-        if (field && this.refs.canvas) {
-            this.refs.canvas.startInsertion(field);
+        if (field && this.canvasInstance) {
+            this.canvasInstance.startInsertion(field);
         } else {
             this.state.loading = true;
             const xpathExpr = "//sheet"; // target sheets in forms
@@ -190,6 +190,10 @@ export class StudioCeEditor extends Component {
                 this.state.loading = false;
             }
         }
+    }
+
+    onRegisterCanvas(canvasInstance) {
+        this.canvasInstance = canvasInstance;
     }
 
     async onFieldUpdate(fieldName, vals) {

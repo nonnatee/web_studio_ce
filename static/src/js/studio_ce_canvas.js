@@ -23,6 +23,10 @@ export class StudioCeCanvas extends Component {
                 this.updateArchTree(nextProps.view.arch);
             }
         });
+
+        if (this.props.onRegister) {
+            this.props.onRegister(this);
+        }
     }
 
     updateArchTree(archXml = this.props.view ? this.props.view.arch : "") {
@@ -105,4 +109,5 @@ StudioCeCanvas.props = {
     onToggleVisibility: Function,
     onInsertField: Function,
     onOverrideProperty: Function,
+    onRegister: Function,
 };

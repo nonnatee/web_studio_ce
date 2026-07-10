@@ -50,7 +50,7 @@
                         <SecurityEditor model="state.model"/>
                     </t>
                     <t t-else="">
-                        <StudioCeCanvas t-ref="canvas"
+                        <StudioCeCanvas onRegister.bind="onRegisterCanvas"
                                         view="state.views.find(v => v.id === state.viewId) || state.views[0]"
                                         fields="state.fields"
                                         selectedField="state.selectedField"
