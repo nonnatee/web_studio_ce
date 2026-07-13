@@ -125,6 +125,7 @@
                                               t-att-value="props.selectedField.compute"
                                               t-on-change="(ev) => this.updateProperty('compute', ev.target.value)"/>
                                 </div>
+                            </div>
 
                             <!-- Relational Link -->
                             <div t-if="['many2one', 'one2many', 'many2many'].includes(props.selectedField.ttype)" class="mb-3 border-top pt-3">
