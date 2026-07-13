@@ -12,6 +12,7 @@ export class StudioCeCanvas extends Component {
             groupName: "",
             pageName: "",
             showInsertModal: false,
+            mode: "canvas", // canvas (edit), form (realistic form), list (realistic list)
         });
 
         onWillStart(() => {
@@ -101,11 +102,58 @@ export class StudioCeCanvas extends Component {
         );
         this.closeInsertion();
     }
+
+    async switchMode(newMode) {
+        if (newMode === 'form') {
+            const formView = this.props.views.find(v => v.type === 'form');
+            if (formView && (!this.props.view || this.props.view.id !== formView.id)) {
+                await this.props.onViewChange(formView.id);
+            }
+        } else if (newMode === 'list') {
+            const listView = this.props.views.find(v => v.type === 'list' || v.type === 'tree');
+            if (listView && (!this.props.view || this.props.view.id !== listView.id)) {
+                await this.props.onViewChange(listView.id);
+            }
+        }
+        this.state.mode = newMode;
+    }
+
+    getListFields(node) {
+        const fields = [];
+        const findFields = (n) => {
+            if (n.name === 'field') {
+                fields.push({
+                    name: n.attrs.name,
+                    string: n.attrs.string || this.getFieldLabel(n.attrs.name),
+                    type: this.getFieldType(n.attrs.name),
+                });
+            }
+            if (n.children) {
+                n.children.forEach(findFields);
+            }
+        };
+        findFields(node);
+        return fields;
+    }
+
+    getFieldType(fieldName) {
+        const f = this.props.fields.find(field => field.name === fieldName);
+        return f ? f.ttype : 'char';
+    }
+
+    getMockValue(name, type, rowNum) {
+        if (type === 'boolean') return '☑';
+        if (type === 'integer') return `${10 * rowNum + 5}`;
+        if (type === 'float' || type === 'monetary') return `$${(45.5 * rowNum).toFixed(2)}`;
+        if (type === 'date' || type === 'datetime') return '2026-07-13';
+        return `Sample Value ${rowNum}`;
+    }
 }
 
 StudioCeCanvas.template = "web_studio_ce.StudioCeCanvas";
 StudioCeCanvas.props = {
     view: { type: Object, optional: true },
+    views: Array,
     fields: Array,
     selectedField: { type: true, optional: true },
     onSelectField: Function,
@@ -113,4 +161,5 @@ StudioCeCanvas.props = {
     onInsertField: Function,
     onOverrideProperty: Function,
     onRegister: Function,
+    onViewChange: Function,
 };

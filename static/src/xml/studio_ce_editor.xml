@@ -29,6 +29,7 @@
                                  modelName="state.model"
                                  logs="state.logs"
                                  approvals="state.approvals"
+                                 groups="state.groups"
                                  onTabChange.bind="onTabChange"
                                  onSelectField.bind="onSelectField"
                                  onDeselectField.bind="onDeselectField"
@@ -56,13 +57,15 @@
                     </t>
                     <t t-else="">
                         <StudioCeCanvas onRegister.bind="onRegisterCanvas"
-                                        view="state.views.find(v => v.id === state.viewId) || state.views[0]"
-                                        fields="state.fields"
-                                        selectedField="state.selectedField"
-                                        onSelectField.bind="onSelectField"
-                                        onToggleVisibility.bind="toggleFieldVisibility"
-                                        onInsertField.bind="insertFieldIntoView"
-                                        onOverrideProperty.bind="overrideViewFieldProperty"/>
+                                         view="state.views.find(v => v.id === state.viewId) || state.views[0]"
+                                         views="state.views"
+                                         fields="state.fields"
+                                         selectedField="state.selectedField"
+                                         onSelectField.bind="onSelectField"
+                                         onToggleVisibility.bind="toggleFieldVisibility"
+                                         onInsertField.bind="insertFieldIntoView"
+                                         onOverrideProperty.bind="overrideViewFieldProperty"
+                                         onViewChange.bind="onViewChange"/>
                     </t>
                 </main>
             </div>
