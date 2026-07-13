@@ -26,6 +26,8 @@ class StudioCeController(http.Controller):
                     'ttype': field.ttype,
                     'relation': field.relation,
                     'is_studio_ce': field.is_studio_ce,
+                    'compute': field.compute or '',
+                    'depends': field.depends or '',
                 })
 
             # Views
@@ -68,11 +70,41 @@ class StudioCeController(http.Controller):
             # Automations
             automations_data = []
             for auto in request.env['base.automation'].search([('model_id', '=', model.id)]):
+                action = auto.action_server_ids[0] if auto.action_server_ids else False
                 automations_data.append({
                     'id': auto.id,
                     'name': auto.name,
                     'trigger': auto.trigger,
+                    'trg_date_field_name': auto.trg_date_id.name or '',
+                    'trg_date_range': auto.trg_date_range or 0,
+                    'trg_date_range_type': auto.trg_date_range_type or 'days',
+                    'filter_domain': auto.filter_domain or '[]',
+                    'filter_pre_domain': auto.filter_pre_domain or '[]',
                     'is_studio_ce': auto.is_studio_ce,
+                    'action_state': action.state if action else 'code',
+                    'code': action.code if action else '',
+                    'template_id': action.template_id.id if action and action.template_id else False,
+                    'activity_type_id': action.activity_type_id.id if action and action.activity_type_id else False,
+                    'activity_summary': action.activity_summary if action else '',
+                    'activity_note': action.activity_note if action else '',
+                    'activity_date_deadline_range': action.activity_date_deadline_range if action else 0,
+                    'activity_date_deadline_range_type': action.activity_date_deadline_range_type if action else 'days',
+                    'activity_user_id': action.activity_user_id.id if action and action.activity_user_id else False,
+                })
+
+            # Approvals
+            approvals_data = []
+            for app in request.env['studio.ce.approval'].search([('model_name', '=', model_name), ('active', '=', True)]):
+                approvals_data.append({
+                    'id': app.id,
+                    'name': app.name,
+                    'min_approvals': app.min_approvals,
+                    'user_ids': app.user_ids.ids,
+                    'group_ids': app.group_ids.ids,
+                    'state_field_name': app.state_field_id.name or 'x_studio_approval_state',
+                    'approved_value': app.approved_value,
+                    'refused_value': app.refused_value,
+                    'required_domain': app.required_domain,
                 })
 
             return {
@@ -81,6 +113,7 @@ class StudioCeController(http.Controller):
                 'views': views_data,
                 'groups': groups_data,
                 'automations': automations_data,
+                'approvals': approvals_data,
             }
         except Exception as e:
             import logging
@@ -89,7 +122,7 @@ class StudioCeController(http.Controller):
             return {'error': f'Server error loading context for {model_name}: {str(e)}'}
 
     @http.route('/web_studio_ce/add_field', type='json', auth='user')
-    def add_field(self, model_name, field_name, field_label, field_type, relation=None, selection=None):
+    def add_field(self, model_name, field_name, field_label, field_type, relation=None, selection=None, compute=None, depends=None):
         """Creates a custom field dynamically on a model."""
         if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
             return {'error': 'Access Denied.'}
@@ -140,6 +173,10 @@ class StudioCeController(http.Controller):
             vals['relation'] = relation
         if selection:
             vals['selection'] = selection
+        if compute:
+            vals['compute'] = compute
+        if depends:
+            vals['depends'] = depends
 
         new_field = request.env['ir.model.fields'].create(vals)
 
@@ -162,6 +199,8 @@ class StudioCeController(http.Controller):
             'ttype': new_field.ttype,
             'relation': new_field.relation,
             'selection': new_field.selection,
+            'compute': new_field.compute or '',
+            'depends': new_field.depends or '',
         }
 
     @http.route('/web_studio_ce/edit_view', type='json', auth='user')
@@ -229,6 +268,17 @@ class StudioCeController(http.Controller):
             'is_studio_ce': True,
         }
         new_auto = request.env['base.automation'].create(vals)
+        
+        # Link a server action
+        request.env['ir.actions.server'].create({
+            'name': f"{name} - Action",
+            'model_id': model.id,
+            'state': action_type,
+            'code': code,
+            'base_automation_id': new_auto.id,
+            'usage': 'base_automation',
+        })
+        
         return {'id': new_auto.id, 'name': new_auto.name}
 
     @http.route('/web_studio_ce/create_model', type='json', auth='user')
@@ -502,11 +552,15 @@ class StudioCeController(http.Controller):
         if 'selectionOptions' in vals:
             # Convert list of lists/tuples to string representation for selection options
             field_vals['selection'] = str(vals['selectionOptions'])
+        if 'compute' in vals:
+            field_vals['compute'] = vals['compute']
+        if 'depends' in vals:
+            field_vals['depends'] = vals['depends']
 
         if field_vals:
             field.write(field_vals)
             # Reload registry if critical properties changed
-            if any(k in field_vals for k in ['required', 'readonly', 'relation', 'selection']):
+            if any(k in field_vals for k in ['required', 'readonly', 'relation', 'selection', 'compute', 'depends']):
                 request.env.registry.setup_models(request.cr)
                 request.env.registry.init_models(request.cr, [model_name], request.context)
 
@@ -521,13 +575,63 @@ class StudioCeController(http.Controller):
         if not rule.exists():
             return {'error': 'Rule not found.'}
 
-        update_vals = {}
+        # Update automation rule properties
+        auto_vals = {}
         if 'name' in vals:
-            update_vals['name'] = vals['name']
+            auto_vals['name'] = vals['name']
         if 'trigger' in vals:
-            update_vals['trigger'] = vals['trigger']
+            auto_vals['trigger'] = vals['trigger']
+        if 'trg_date_field_name' in vals:
+            field = request.env['ir.model.fields'].search([
+                ('model_id', '=', rule.model_id.id),
+                ('name', '=', vals['trg_date_field_name'])
+            ], limit=1)
+            auto_vals['trg_date_id'] = field.id if field else False
+        if 'trg_date_range' in vals:
+            auto_vals['trg_date_range'] = int(vals['trg_date_range'])
+        if 'trg_date_range_type' in vals:
+            auto_vals['trg_date_range_type'] = vals['trg_date_range_type']
+        if 'filter_domain' in vals:
+            auto_vals['filter_domain'] = vals['filter_domain']
+        if 'filter_pre_domain' in vals:
+            auto_vals['filter_pre_domain'] = vals['filter_pre_domain']
 
-        rule.write(update_vals)
+        if auto_vals:
+            rule.write(auto_vals)
+
+        # Update linked server action properties
+        action_vals = {}
+        if 'action_state' in vals:
+            action_vals['state'] = vals['action_state']
+        if 'code' in vals:
+            action_vals['code'] = vals['code']
+        if 'template_id' in vals:
+            action_vals['template_id'] = vals['template_id']
+        if 'activity_type_id' in vals:
+            action_vals['activity_type_id'] = vals['activity_type_id']
+        if 'activity_summary' in vals:
+            action_vals['activity_summary'] = vals['activity_summary']
+        if 'activity_note' in vals:
+            action_vals['activity_note'] = vals['activity_note']
+        if 'activity_date_deadline_range' in vals:
+            action_vals['activity_date_deadline_range'] = int(vals['activity_date_deadline_range'])
+        if 'activity_date_deadline_range_type' in vals:
+            action_vals['activity_date_deadline_range_type'] = vals['activity_date_deadline_range_type']
+        if 'activity_user_id' in vals:
+            action_vals['activity_user_id'] = vals['activity_user_id']
+        if 'name' in vals:
+            action_vals['name'] = f"{vals['name']} - Action"
+
+        if action_vals:
+            action = rule.action_server_ids[0] if rule.action_server_ids else False
+            if action:
+                action.write(action_vals)
+            else:
+                action_vals['base_automation_id'] = rule.id
+                action_vals['model_id'] = rule.model_id.id
+                action_vals['usage'] = 'base_automation'
+                request.env['ir.actions.server'].create(action_vals)
+
         return {'status': 'success'}
 
     @http.route('/web_studio_ce/get_models', type='json', auth='user')
@@ -751,4 +855,114 @@ class StudioCeController(http.Controller):
             return {'status': 'success'}
         except Exception as e:
             return {'error': f'Revert failed: {str(e)}'}
+
+    @http.route('/web_studio_ce/get_approvals', type='json', auth='user')
+    def get_approvals(self, model_name):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        approvals = request.env['studio.ce.approval'].search([
+            ('model_name', '=', model_name),
+            ('active', '=', True)
+        ])
+        approvals_data = []
+        for app in approvals:
+            approvals_data.append({
+                'id': app.id,
+                'name': app.name,
+                'min_approvals': app.min_approvals,
+                'user_ids': app.user_ids.ids,
+                'group_ids': app.group_ids.ids,
+                'state_field_name': app.state_field_id.name or 'x_studio_approval_state',
+                'approved_value': app.approved_value,
+                'refused_value': app.refused_value,
+                'required_domain': app.required_domain,
+            })
+        return {'approvals': approvals_data}
+
+    @http.route('/web_studio_ce/save_approval', type='json', auth='user')
+    def save_approval(self, model_name, name, min_approvals=1, user_ids=None, group_ids=None, state_field_name='x_studio_approval_state', approved_value='approved', refused_value='refused', required_domain='[]', approval_id=None):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        model = request.env['ir.model'].search([('model', '=', model_name)], limit=1)
+        if not model:
+            return {'error': f'Model {model_name} not found.'}
+
+        # Find or create state field
+        field_name = state_field_name or 'x_studio_approval_state'
+        field = request.env['ir.model.fields'].search([
+            ('model_id', '=', model.id),
+            ('name', '=', field_name)
+        ], limit=1)
+        if not field:
+            field = request.env['ir.model.fields'].create({
+                'name': field_name,
+                'model_id': model.id,
+                'model': model_name,
+                'field_description': 'Approval State',
+                'ttype': 'selection',
+                'selection': str([('draft', 'Draft'), ('to_approve', 'To Approve'), ('approved', 'Approved'), ('refused', 'Refused')]),
+                'state': 'manual',
+                'is_studio_ce': True,
+            })
+            # Setup & init registry
+            request.env.registry.setup_models(request.cr)
+            request.env.registry.init_models(request.cr, [model_name], request.context)
+
+        vals = {
+            'name': name,
+            'model_id': model.id,
+            'min_approvals': int(min_approvals),
+            'state_field_id': field.id,
+            'approved_value': approved_value,
+            'refused_value': refused_value,
+            'required_domain': required_domain,
+            'user_ids': [(6, 0, user_ids or [])],
+            'group_ids': [(6, 0, group_ids or [])],
+        }
+
+        if approval_id:
+            approval = request.env['studio.ce.approval'].browse(approval_id)
+            if approval.exists():
+                approval.write(vals)
+        else:
+            approval = request.env['studio.ce.approval'].create(vals)
+
+        # Inject buttons into the primary form view of the model
+        form_view = request.env['ir.ui.view'].search([
+            ('model', '=', model_name),
+            ('type', '=', 'form'),
+            ('inherit_id', '=', False)
+        ], limit=1)
+        if form_view:
+            # Check if header is already in the compiled arch
+            arch_str = form_view._get_combined_arch()
+            has_header = '<header>' in arch_str or '<header ' in arch_str
+
+            buttons_xml = f"""
+                <button name="action_studio_approve" string="Approve" type="object" class="btn-primary" invisible="{field_name} != 'to_approve'"/>
+                <button name="action_studio_reject" string="Reject" type="object" class="btn-secondary" invisible="{field_name} != 'to_approve'"/>
+                <field name="{field_name}" widget="statusbar" statusbar_visible="draft,to_approve,approved,refused"/>
+            """
+
+            if has_header:
+                modification_xml = f'<xpath expr="//header" position="inside">{buttons_xml}</xpath>'
+            else:
+                modification_xml = f'<xpath expr="//sheet" position="before"><header>{buttons_xml}</header></xpath>'
+
+            self.edit_view(view_id=form_view.id, xpath_expr="//form", modification_xml=modification_xml)
+
+        return {'id': approval.id, 'name': approval.name}
+
+    @http.route('/web_studio_ce/delete_approval', type='json', auth='user')
+    def delete_approval(self, approval_id):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        approval = request.env['studio.ce.approval'].browse(approval_id)
+        if approval.exists():
+            approval.active = False
+            return {'status': 'success'}
+        return {'error': 'Approval not found.'}
 

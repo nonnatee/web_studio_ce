@@ -29,5 +29,6 @@ export class AutomationEditor extends Component {
 AutomationEditor.template = "web_studio_ce.AutomationEditor";
 AutomationEditor.props = {
     rule: Object,
+    fields: Array,
     onRuleUpdated: Function,
 };

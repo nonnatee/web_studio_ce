@@ -28,6 +28,7 @@
                                  selectedField="state.selectedField"
                                  modelName="state.model"
                                  logs="state.logs"
+                                 approvals="state.approvals"
                                  onTabChange.bind="onTabChange"
                                  onSelectField.bind="onSelectField"
                                  onDeselectField.bind="onDeselectField"
@@ -36,6 +37,8 @@
                                  onAddFieldToView.bind="addFieldToView"
                                  onAddAutomation.bind="addAutomationRule"
                                  onRuleReload.bind="loadStudioContext"
+                                 onAddApproval.bind="addApprovalWorkflow"
+                                 onApprovalReload.bind="loadStudioContext"
                                  onRevertLog.bind="revertLog"
                                  onOverrideProperty.bind="overrideViewFieldProperty"
                                  onViewChange.bind="onViewChange"/>

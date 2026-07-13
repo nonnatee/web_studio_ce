@@ -4,4 +4,5 @@ from . import ir_model_fields
 from . import ir_ui_view
 from . import studio_export
 from . import studio_log
+from . import studio_approval
 

@@ -24,6 +24,7 @@ export class StudioCeEditor extends Component {
             automations: [],
             groups: [],
             logs: [],
+            approvals: [],
             loading: true,
             showDocs: false,
             showAppCreator: false,
@@ -53,6 +54,7 @@ export class StudioCeEditor extends Component {
                 this.state.views = data.views;
                 this.state.automations = data.automations;
                 this.state.groups = data.groups;
+                this.state.approvals = data.approvals || [];
             }
 
             // Load Customisation Logs
@@ -249,6 +251,22 @@ export class StudioCeEditor extends Component {
             await this.loadStudioContext();
         } catch (error) {
             console.error("Failed to add automation rule", error);
+        } finally {
+            this.state.loading = false;
+        }
+    }
+
+    async addApprovalWorkflow() {
+        this.state.loading = true;
+        try {
+            await this.rpc("/web_studio_ce/save_approval", {
+                model_name: this.state.model,
+                name: 'New Approval Workflow',
+                min_approvals: 1,
+            });
+            await this.loadStudioContext();
+        } catch (error) {
+            console.error("Failed to add approval workflow", error);
         } finally {
             this.state.loading = false;
         }

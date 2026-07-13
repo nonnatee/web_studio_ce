@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="web_studio_ce.ApprovalEditor" owl="1">
+        <div class="card p-3 mb-3 border shadow-sm" style="border-radius: 8px;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="fw-bold text-dark small">✍️ Approval Config</span>
+                <span t-if="state.saving" class="spinner-border spinner-border-sm text-primary" role="status"></span>
+            </div>
+
+            <!-- Workflow Name -->
+            <div class="mb-3">
+                <label class="form-label text-secondary small fw-bold">Workflow Name</label>
+                <input type="text" class="form-control form-control-sm"
+                       t-att-value="props.approval.name"
+                       t-on-change="(ev) => this.updateApproval('name', ev.target.value)"/>
+            </div>
+
+            <!-- Minimum Approvals -->
+            <div class="mb-3">
+                <label class="form-label text-secondary small fw-bold">Minimum Approvals</label>
+                <input type="number" class="form-control form-control-sm"
+                       t-att-value="props.approval.min_approvals"
+                       t-on-change="(ev) => this.updateApproval('min_approvals', ev.target.value)"/>
+            </div>
+
+            <!-- Trigger State Field -->
+            <div class="mb-3">
+                <label class="form-label text-secondary small fw-bold">Approval State Field</label>
+                <input type="text" class="form-control form-control-sm bg-light" readonly="1"
+                       t-att-value="props.approval.state_field_name"/>
+            </div>
+
+            <!-- Conditions / Required Domain -->
+            <div class="mb-3">
+                <label class="form-label text-secondary small fw-bold">Condition Domain</label>
+                <input type="text" class="form-control form-control-sm font-monospace" style="font-size:0.75rem;"
+                       t-att-value="props.approval.required_domain"
+                       t-on-change="(ev) => this.updateApproval('required_domain', ev.target.value)"/>
+            </div>
+
+            <!-- Allowed Groups Selection -->
+            <div class="mb-3 border-top pt-3">
+                <label class="form-label text-secondary small fw-bold">Authorized Groups</label>
+                <div class="overflow-auto border rounded p-2 bg-light" style="max-height: 150px;">
+                    <t t-foreach="props.groups" t-as="group" t-key="group.id">
+                        <div class="form-check mb-1">
+                            <input type="checkbox" class="form-check-input"
+                                   t-att-id="'app_group_' + group.id"
+                                   t-att-checked="(props.approval.group_ids || []).includes(group.id)"
+                                   t-on-change="() => this.updateApproval('group_ids', group.id)"/>
+                            <label class="form-check-label text-dark small" t-att-for="'app_group_' + group.id">
+                                <t t-esc="group.display_name"/>
+                            </label>
+                        </div>
+                    </t>
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>

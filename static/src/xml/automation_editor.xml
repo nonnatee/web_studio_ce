@@ -16,16 +16,119 @@
             </div>
 
             <!-- Trigger Type Selection -->
-            <div class="mb-2">
+            <div class="mb-3">
                 <label class="form-label text-secondary small fw-bold">Trigger Event</label>
                 <select class="form-select form-select-sm"
                         t-att-value="props.rule.trigger"
                         t-on-change="(ev) => this.updateRule('trigger', ev.target.value)">
                     <option value="on_create">On Creation (on_create)</option>
-                    <option value="on_write">On Update (on_write)</option>
+                    <option value="on_create_or_write">On Creation &amp; Update (on_create_or_write)</option>
                     <option value="on_unlink">On Deletion (on_unlink)</option>
+                    <option value="on_time">Based on date field (on_time)</option>
                 </select>
             </div>
+
+            <!-- Date-based Triggers Config -->
+            <div t-if="props.rule.trigger === 'on_time'" class="mb-3 border rounded p-2 bg-light">
+                <div class="mb-2">
+                    <label class="form-label text-secondary small fw-bold">Trigger Date Field</label>
+                    <select class="form-select form-select-sm"
+                            t-att-value="props.rule.trg_date_field_name"
+                            t-on-change="(ev) => this.updateRule('trg_date_field_name', ev.target.value)">
+                        <option value="">-- Choose Field --</option>
+                        <t t-foreach="props.fields.filter(f => f.ttype === 'date' || f.ttype === 'datetime')" t-as="f" t-key="f.id">
+                            <option t-att-value="f.name"><t t-esc="f.field_description"/> (<t t-esc="f.name"/>)</option>
+                        </t>
+                    </select>
+                </div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label text-secondary small fw-bold">Delay</label>
+                        <input type="number" class="form-control form-control-sm"
+                               t-att-value="props.rule.trg_date_range"
+                               t-on-change="(ev) => this.updateRule('trg_date_range', ev.target.value)"/>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label text-secondary small fw-bold">Delay Unit</label>
+                        <select class="form-select form-select-sm"
+                                t-att-value="props.rule.trg_date_range_type"
+                                t-on-change="(ev) => this.updateRule('trg_date_range_type', ev.target.value)">
+                            <option value="minutes">Minutes</option>
+                            <option value="hours">Hours</option>
+                            <option value="days">Days</option>
+                            <option value="months">Months</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters/Domains -->
+            <div class="mb-3">
+                <label class="form-label text-secondary small fw-bold">Before Update Domain (filter_pre_domain)</label>
+                <input type="text" class="form-control form-control-sm font-monospace" style="font-size:0.75rem;"
+                       t-att-value="props.rule.filter_pre_domain"
+                       t-on-change="(ev) => this.updateRule('filter_pre_domain', ev.target.value)"/>
+            </div>
+            <div class="mb-3">
+                <label class="form-label text-secondary small fw-bold">After Update Domain (filter_domain)</label>
+                <input type="text" class="form-control form-control-sm font-monospace" style="font-size:0.75rem;"
+                       t-att-value="props.rule.filter_domain"
+                       t-on-change="(ev) => this.updateRule('filter_domain', ev.target.value)"/>
+            </div>
+
+            <!-- Action Configuration -->
+            <div class="mb-3 border-top pt-3">
+                <label class="form-label text-secondary small fw-bold">Action To Do</label>
+                <select class="form-select form-select-sm mb-2"
+                        t-att-value="props.rule.action_state"
+                        t-on-change="(ev) => this.updateRule('action_state', ev.target.value)">
+                    <option value="code">Execute Python Code</option>
+                    <option value="next_activity">Create Next Activity</option>
+                </select>
+
+                <!-- Python Code block -->
+                <div t-if="props.rule.action_state === 'code'">
+                    <label class="form-label text-secondary small fw-bold">Python Code</label>
+                    <textarea class="form-control form-control-sm font-monospace" rows="8" style="font-size:0.75rem;"
+                              t-att-value="props.rule.code"
+                              t-on-change="(ev) => this.updateRule('code', ev.target.value)"/>
+                </div>
+
+                <!-- Next Activity block -->
+                <div t-if="props.rule.action_state === 'next_activity'" class="border rounded p-2 bg-light">
+                    <div class="mb-2">
+                        <label class="form-label text-secondary small fw-bold">Summary</label>
+                        <input type="text" class="form-control form-control-sm"
+                               t-att-value="props.rule.activity_summary"
+                               t-on-change="(ev) => this.updateRule('activity_summary', ev.target.value)"/>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label text-secondary small fw-bold">Activity Note</label>
+                        <textarea class="form-control form-control-sm" rows="3"
+                                  t-att-value="props.rule.activity_note"
+                                  t-on-change="(ev) => this.updateRule('activity_note', ev.target.value)"/>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label text-secondary small fw-bold">Due In</label>
+                            <input type="number" class="form-control form-control-sm"
+                                   t-att-value="props.rule.activity_date_deadline_range"
+                                   t-on-change="(ev) => this.updateRule('activity_date_deadline_range', ev.target.value)"/>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label text-secondary small fw-bold">Due Unit</label>
+                            <select class="form-select form-select-sm"
+                                    t-att-value="props.rule.activity_date_deadline_range_type"
+                                    t-on-change="(ev) => this.updateRule('activity_date_deadline_range_type', ev.target.value)">
+                                <option value="days">Days</option>
+                                <option value="weeks">Weeks</option>
+                                <option value="months">Months</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </t>
 </templates>

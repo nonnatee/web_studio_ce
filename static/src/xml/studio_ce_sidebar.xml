@@ -14,6 +14,9 @@
                     <button class="nav-link py-2" t-att-class="{ active: props.activeTab === 'automations' }" t-on-click="() => props.onTabChange('automations')">Rules</button>
                 </li>
                 <li class="nav-item">
+                    <button class="nav-link py-2" t-att-class="{ active: props.activeTab === 'approvals' }" t-on-click="() => props.onTabChange('approvals')">Approvals</button>
+                </li>
+                <li class="nav-item">
                     <button class="nav-link py-2" t-att-class="{ active: props.activeTab === 'logs' }" t-on-click="() => props.onTabChange('logs')">History</button>
                 </li>
             </ul>
@@ -101,6 +104,28 @@
                                        t-on-change="(ev) => this.overrideProperty('placeholder', ev.target.value)"/>
                             </div>
 
+                            <!-- Computed Field Section -->
+                            <div class="mb-3 border-top pt-3">
+                                <div class="form-check mb-2">
+                                    <input type="checkbox" class="form-check-input" id="prop_is_compute"
+                                           t-att-checked="props.selectedField.compute ? true : false"
+                                           t-on-change="(ev) => this.updateProperty('compute', ev.target.checked ? '# Write your Python code here\n# Available variables:\n#  - self: recordset\nfor record in self:\n    record[\'' + props.selectedField.name + '\'] = False' : '')"/>
+                                    <label class="form-check-label text-dark small" for="prop_is_compute">Computed field</label>
+                                </div>
+                                <div t-if="props.selectedField.compute" class="mb-2">
+                                    <label class="form-label text-secondary small fw-bold">Dependencies</label>
+                                    <input type="text" class="form-control form-control-sm"
+                                           placeholder="e.g. x_field1,x_field2"
+                                           t-att-value="props.selectedField.depends"
+                                           t-on-change="(ev) => this.updateProperty('depends', ev.target.value)"/>
+                                </div>
+                                <div t-if="props.selectedField.compute" class="mb-2">
+                                    <label class="form-label text-secondary small fw-bold">Python Code</label>
+                                    <textarea class="form-control form-control-sm font-monospace" rows="5" style="font-size:0.75rem;"
+                                              t-att-value="props.selectedField.compute"
+                                              t-on-change="(ev) => this.updateProperty('compute', ev.target.value)"/>
+                                </div>
+
                             <!-- Relational Link -->
                             <div t-if="['many2one', 'one2many', 'many2many'].includes(props.selectedField.ttype)" class="mb-3 border-top pt-3">
                                 <label class="form-label text-secondary small fw-bold">Related Model</label>
@@ -187,7 +212,7 @@
                             <h5 class="fw-bold mb-0 text-dark">Rule Properties</h5>
                             <button class="btn btn-sm btn-outline-secondary py-0 px-2" t-on-click="() => this.deselectRule()">✕ Back</button>
                         </div>
-                        <AutomationEditor rule="state.selectedRule" onRuleUpdated.bind="onRuleUpdated"/>
+                        <AutomationEditor rule="state.selectedRule" fields="props.fields" onRuleUpdated.bind="onRuleUpdated"/>
                     </t>
                     <t t-else="">
                         <h5 class="fw-bold mb-3">Automated Actions</h5>
@@ -199,6 +224,31 @@
                                 <div class="list-group-item list-group-item-action py-2 px-3 cursor-pointer" t-on-click="() => this.selectRule(auto)">
                                     <div class="fw-bold text-dark small"><t t-esc="auto.name"/></div>
                                     <small class="badge bg-secondary" style="font-size:0.7rem;"><t t-esc="auto.trigger"/></small>
+                                </div>
+                            </t>
+                        </div>
+                    </t>
+                </div>
+
+                <!-- 3.5. Approvals Tab -->
+                <div t-if="props.activeTab === 'approvals'" class="tab-pane show active">
+                    <t t-if="state.selectedApproval">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold mb-0 text-dark">Approval Properties</h5>
+                            <button class="btn btn-sm btn-outline-secondary py-0 px-2" t-on-click="() => this.deselectApproval()">✕ Back</button>
+                        </div>
+                        <ApprovalEditor approval="state.selectedApproval" groups="props.groups" modelName="props.modelName" onApprovalUpdated.bind="onApprovalUpdated"/>
+                    </t>
+                    <t t-else="">
+                        <h5 class="fw-bold mb-3">Approval Workflows</h5>
+                        <button class="btn btn-primary btn-sm w-100 mb-3" t-on-click="props.onAddApproval">
+                            Create Workflow
+                        </button>
+                        <div class="list-group list-group-flush border rounded overflow-auto" style="max-height: 350px;">
+                            <t t-foreach="props.approvals || []" t-as="app" t-key="app.id">
+                                <div class="list-group-item list-group-item-action py-2 px-3 cursor-pointer" t-on-click="() => this.selectApproval(app)">
+                                    <div class="fw-bold text-dark small"><t t-esc="app.name"/></div>
+                                    <small class="badge bg-secondary" style="font-size:0.7rem;"><t t-esc="app.state_field_name"/></small>
                                 </div>
                             </t>
                         </div>

@@ -71,6 +71,89 @@ class TestStudioCeFlow(TransactionCase):
         self.assertIn('url', action)
         self.assertIn('studio.ce.export', action['url'])
 
+    def test_04_computed_field_creation(self):
+        """Test computed field creation and evaluation."""
+        field_name = 'x_studio_computed_test'
+        new_field = self.env['ir.model.fields'].create({
+            'name': field_name,
+            'model_id': self.partner_model.id,
+            'model': 'res.partner',
+            'field_description': 'Computed Field',
+            'ttype': 'char',
+            'state': 'manual',
+            'is_studio_ce': True,
+            'compute': "for r in self: r['x_studio_computed_test'] = 'Calculated'",
+            'depends': 'name',
+        })
+        self.assertTrue(new_field.exists())
+        self.assertEqual(new_field.compute, "for r in self: r['x_studio_computed_test'] = 'Calculated'")
+        self.assertEqual(new_field.depends, 'name')
+
+    def test_05_rich_automation_rules(self):
+        """Test rich automation rules configuration and linked server actions."""
+        # Create automation with delay and code action
+        auto = self.env['base.automation'].create({
+            'name': 'Delayed Automation',
+            'model_id': self.partner_model.id,
+            'trigger': 'on_time',
+            'trg_date_range': 2,
+            'trg_date_range_type': 'days',
+            'is_studio_ce': True,
+        })
+        self.assertTrue(auto.exists())
+        self.assertEqual(auto.trigger, 'on_time')
+        self.assertEqual(auto.trg_date_range, 2)
+        
+        # Link server action
+        action = self.env['ir.actions.server'].create({
+            'name': 'Delayed Action',
+            'model_id': self.partner_model.id,
+            'state': 'code',
+            'code': 'pass',
+            'base_automation_id': auto.id,
+            'usage': 'base_automation',
+        })
+        self.assertTrue(action.exists())
+        self.assertEqual(action.base_automation_id.id, auto.id)
+
+    def test_06_approval_workflows(self):
+        """Test approval configuration and approve/reject execution."""
+        state_field = self.env['ir.model.fields'].create({
+            'name': 'x_studio_approval_state',
+            'model_id': self.partner_model.id,
+            'model': 'res.partner',
+            'field_description': 'Approval State',
+            'ttype': 'selection',
+            'selection': "[('draft', 'Draft'), ('to_approve', 'To Approve'), ('approved', 'Approved'), ('refused', 'Refused')]",
+            'state': 'manual',
+            'is_studio_ce': True,
+        })
+        
+        approval = self.env['studio.ce.approval'].create({
+            'name': 'Partner Approval',
+            'model_id': self.partner_model.id,
+            'min_approvals': 1,
+            'state_field_id': state_field.id,
+            'approved_value': 'approved',
+            'refused_value': 'refused',
+        })
+        
+        self.assertTrue(approval.exists())
+        self.assertEqual(approval.model_name, 'res.partner')
+
+        # Test approving/rejecting a partner record
+        partner = self.env['res.partner'].create({
+            'name': 'Test Partner',
+            'x_studio_approval_state': 'to_approve',
+        })
+        
+        partner.action_studio_approve()
+        self.assertEqual(partner.x_studio_approval_state, 'approved')
+        
+        partner.write({'x_studio_approval_state': 'to_approve'})
+        partner.action_studio_reject()
+        self.assertEqual(partner.x_studio_approval_state, 'refused')
+
 
 class TestStudioCeProductFlow(TransactionCase):
 

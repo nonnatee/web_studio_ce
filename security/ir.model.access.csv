@@ -1,4 +1,10 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_studio_ce_export,studio.ce.export,model_studio_ce_export,web_studio_ce.group_studio_ce,1,1,1,1
 access_studio_ce_log,studio.ce.log,model_studio_ce_log,web_studio_ce.group_studio_ce,1,1,1,1
+access_studio_ce_approval,studio.ce.approval,model_studio_ce_approval,web_studio_ce.group_studio_ce,1,1,1,1
+access_studio_ce_approval_rule,studio.ce.approval.rule,model_studio_ce_approval_rule,web_studio_ce.group_studio_ce,1,1,1,1
+access_studio_ce_approval_log,studio.ce.approval.log,model_studio_ce_approval_log,web_studio_ce.group_studio_ce,1,1,1,1
+access_studio_ce_approval_user,studio.ce.approval,model_studio_ce_approval,base.group_user,1,0,0,0
+access_studio_ce_approval_rule_user,studio.ce.approval.rule,model_studio_ce_approval_rule,base.group_user,1,0,0,0
+access_studio_ce_approval_log_user,studio.ce.approval.log,model_studio_ce_approval_log,base.group_user,1,1,1,1
 

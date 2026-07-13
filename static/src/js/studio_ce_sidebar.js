@@ -3,6 +3,7 @@
 import { Component, useState } from "@odoo/owl";
 import { AutomationEditor } from "./automation_editor";
 import { PropertiesBuilder } from "./properties_builder";
+import { ApprovalEditor } from "./approval_editor";
 
 export class StudioCeSidebar extends Component {
     setup() {
@@ -10,6 +11,7 @@ export class StudioCeSidebar extends Component {
             newOptionKey: "",
             newOptionValue: "",
             selectedRule: null,
+            selectedApproval: null,
         });
     }
 
@@ -52,22 +54,42 @@ export class StudioCeSidebar extends Component {
             this.state.selectedRule = updated;
         }
     }
+
+    selectApproval(app) {
+        this.state.selectedApproval = app;
+    }
+
+    deselectApproval() {
+        this.state.selectedApproval = null;
+    }
+
+    onApprovalUpdated() {
+        this.props.onApprovalReload();
+        const updated = this.props.approvals.find(a => a.id === this.state.selectedApproval.id);
+        if (updated) {
+            this.state.selectedApproval = updated;
+        }
+    }
 }
 
 StudioCeSidebar.template = "web_studio_ce.StudioCeSidebar";
-StudioCeSidebar.components = { AutomationEditor, PropertiesBuilder };
+StudioCeSidebar.components = { AutomationEditor, PropertiesBuilder, ApprovalEditor };
 StudioCeSidebar.props = {
     activeTab: String,
     fields: Array,
     views: Array,
     automations: Array,
     logs: Array,
+    approvals: Array,
+    groups: Array,
     selectedField: { type: true, optional: true },
     onFieldUpdate: Function,
     onAddField: Function,
     onAddFieldToView: Function,
     onAddAutomation: Function,
     onRuleReload: Function,
+    onAddApproval: Function,
+    onApprovalReload: Function,
     onTabChange: Function,
     onSelectField: Function,
     onDeselectField: Function,
