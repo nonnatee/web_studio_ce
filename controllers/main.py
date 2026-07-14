@@ -32,7 +32,7 @@ class StudioCeController(http.Controller):
 
             # Views
             views_data = []
-            domain = [('model', '=', model_name), ('type', 'in', ['form', 'list', 'tree', 'search'])]
+            domain = [('model', '=', model_name), ('type', 'in', ['form', 'list', 'tree', 'kanban', 'search'])]
             views = request.env['ir.ui.view'].search(domain)
             # Sort base views (non-inherited) first manually
             base_views = [v for v in views if not v.inherit_id]
@@ -43,7 +43,12 @@ class StudioCeController(http.Controller):
                 arch = view.arch
                 if not view.inherit_id:
                     try:
-                        arch = view._get_combined_arch()
+                        if hasattr(view, 'get_combined_arch'):
+                            arch = view.get_combined_arch()
+                        else:
+                            from lxml import etree
+                            arch_tree = view._get_combined_arch()
+                            arch = etree.tostring(arch_tree, encoding='unicode')
                     except Exception:
                         arch = view.arch
                 views_data.append({

@@ -20,6 +20,12 @@
                     <button type="button" class="btn py-1 px-3"
                             t-att-class="state.mode === 'list' ? 'btn-primary fw-bold' : 'btn-outline-primary'"
                             t-on-click="() => this.switchMode('list')">👁️ List Preview</button>
+                    <button type="button" class="btn py-1 px-3"
+                            t-att-class="state.mode === 'kanban' ? 'btn-primary fw-bold' : 'btn-outline-primary'"
+                            t-on-click="() => this.switchMode('kanban')">👁️ Kanban Preview</button>
+                    <button type="button" class="btn py-1 px-3"
+                            t-att-class="state.mode === 'xml' ? 'btn-primary fw-bold' : 'btn-outline-primary'"
+                            t-on-click="() => this.switchMode('xml')">💻 Arch XML</button>
                 </div>
             </div>
 
@@ -52,6 +58,18 @@
                             <t t-set="node" t-value="rootNode"/>
                         </t>
                     </t>
+                </t>
+                <t t-elif="state.mode === 'kanban'">
+                    <t t-foreach="state.archTree" t-as="rootNode" t-key="rootNode_index">
+                        <t t-call="web_studio_ce.KanbanPreviewNode">
+                            <t t-set="node" t-value="rootNode"/>
+                        </t>
+                    </t>
+                </t>
+                <t t-elif="state.mode === 'xml'">
+                    <div class="h-100 d-flex flex-column">
+                        <textarea class="form-control flex-grow-1 font-monospace" readonly="1" style="font-size:0.8rem; background-color: #f8f9fa; min-height: 350px;" rows="15"><t t-esc="props.view ? props.view.arch : ''"/></textarea>
+                    </div>
                 </t>
             </div>
 
@@ -325,6 +343,26 @@
                     </t>
                 </tbody>
             </table>
+        </div>
+    </t>
+
+    <!-- Realistic Kanban Preview Template -->
+    <t t-name="web_studio_ce.KanbanPreviewNode" owl="1">
+        <div class="o_kanban_view bg-light p-3 border rounded shadow-sm">
+            <div class="row g-3">
+                <t t-foreach="[1, 2, 3, 4]" t-as="row" t-key="row">
+                    <div class="col-md-4 col-sm-6 col-12">
+                        <div class="card p-3 bg-white shadow-sm border-light">
+                            <t t-foreach="getListFields(node).slice(0, 3)" t-as="col" t-key="col.name">
+                                <div class="mb-1 text-truncate">
+                                    <strong class="small text-muted"><t t-esc="col.string"/>:</strong>
+                                    <span class="small text-dark ms-1"><t t-esc="getMockValue(col.name, col.type, row)"/></span>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+                </t>
+            </div>
         </div>
     </t>
 </templates>

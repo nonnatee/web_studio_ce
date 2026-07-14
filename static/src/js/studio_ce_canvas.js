@@ -114,6 +114,11 @@ export class StudioCeCanvas extends Component {
             if (listView && (!this.props.view || this.props.view.id !== listView.id)) {
                 await this.props.onViewChange(listView.id);
             }
+        } else if (newMode === 'kanban') {
+            const kanbanView = this.props.views.find(v => v.type === 'kanban');
+            if (kanbanView && (!this.props.view || this.props.view.id !== kanbanView.id)) {
+                await this.props.onViewChange(kanbanView.id);
+            }
         }
         this.state.mode = newMode;
     }

@@ -35,6 +35,7 @@ It enables dynamic modification of fields, views, PDF report templates, automate
             '/web_studio_ce/static/src/js/model_explorer.js',
             '/web_studio_ce/static/src/js/properties_builder.js',
             '/web_studio_ce/static/src/js/approval_editor.js',
+            '/web_studio_ce/static/src/js/studio_ce_debug_items.js',
             '/web_studio_ce/static/src/xml/studio_ce_editor.xml',
             '/web_studio_ce/static/src/xml/studio_ce_sidebar.xml',
             '/web_studio_ce/static/src/xml/report_editor.xml',
