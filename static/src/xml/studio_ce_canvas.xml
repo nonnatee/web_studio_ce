@@ -123,6 +123,29 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Group Delete Confirmation Modal -->
+            <div t-if="state.showDeleteConfirmation" class="modal fade show d-block bg-dark bg-opacity-50" tabindex="-1" role="dialog" style="z-index: 1060;">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content shadow-lg border-danger">
+                        <div class="modal-header bg-danger text-white py-3">
+                            <h5 class="modal-title fw-bold">⚠️ Delete Group Container</h5>
+                            <button type="button" class="btn-close btn-close-white" t-on-click="closeDeleteConfirmation"></button>
+                        </div>
+                        <div class="modal-body py-4">
+                            <p class="mb-3">The group <strong class="text-danger"><t t-esc="state.groupToDelete ? (state.groupToDelete.attrs.string || 'Unnamed Group') : ''"/></strong> contains child elements (fields/nodes).</p>
+                            <p class="text-muted small">Choose how you want to handle these child elements:</p>
+                        </div>
+                        <div class="modal-footer bg-light py-2 d-flex justify-content-between">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" t-on-click="closeDeleteConfirmation">Cancel</button>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-sm btn-warning fw-bold text-white" t-on-click="unwrapGroup">Keep Fields (Move to Parent)</button>
+                                <button type="button" class="btn btn-sm btn-danger fw-bold" t-on-click="confirmDeleteGroupAll">Remove All Contents</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </t>
 
@@ -150,12 +173,28 @@
         </div>
 
         <!-- Group Node -->
-        <div t-elif="node.name === 'group'" class="o_canvas_group border rounded p-3 mb-3 bg-light bg-opacity-25 position-relative"
+        <div t-elif="node.name === 'group'" 
              t-on-dragover.stop.prevent="(ev) => this.onDragOverContainer(ev, node)"
              t-on-dragleave="(ev) => this.onDragLeaveContainer(ev)"
-             t-on-drop.stop.prevent="(ev) => this.onDropContainer(ev, node)">
-            <div class="position-absolute top-0 start-0 m-1 text-muted font-monospace" style="font-size: 0.65rem;">group</div>
-            <div t-if="node.attrs.string" class="fw-bold text-secondary border-bottom pb-1 mb-3 small"><t t-esc="node.attrs.string"/></div>
+             t-on-drop.stop.prevent="(ev) => this.onDropContainer(ev, node)"
+             t-att-class="'o_canvas_group border rounded p-3 mb-3 bg-light bg-opacity-25 position-relative ' + 
+                          ((props.selectedField &amp;&amp; props.selectedField.name === this.getNodeXpath(node)) ? 'border-primary shadow-sm bg-primary bg-opacity-10' : '')"
+             t-on-click.stop="() => this.selectGroup(node)">
+            
+            <div class="o_canvas_group_header d-flex justify-content-between align-items-center border-bottom pb-1 mb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="o_drag_handle text-muted cursor-grab" 
+                          draggable="true"
+                          t-on-dragstart="(ev) => this.onDragStartGroup(ev, node)">⋮⋮</span>
+                    <span t-if="node.attrs.string" class="fw-bold text-secondary small"><t t-esc="node.attrs.string"/></span>
+                    <span t-else="" class="fw-bold text-muted small font-italic">(Unnamed Group)</span>
+                </div>
+                <div class="d-flex gap-2">
+                    <span class="text-muted font-monospace" style="font-size: 0.65rem;">group</span>
+                    <button class="btn btn-xs py-0 px-1 border-0 bg-transparent text-danger fw-bold" 
+                            t-on-click.stop="() => this.onDeleteGroupClick(node)">🗑️</button>
+                </div>
+            </div>
             
             <div class="row g-2">
                 <t t-foreach="node.children" t-as="child" t-key="child_index">
@@ -202,38 +241,39 @@
 
         <!-- Field Node -->
         <div t-elif="node.name === 'field'" 
-             draggable="true"
-             t-on-dragstart="(ev) => this.onDragStartField(ev, node.attrs.name, node.attrs.string || this.getFieldLabel(node.attrs.name))"
              t-on-dragover.stop.prevent="(ev) => this.onDragOverField(ev, node.attrs.name)"
              t-on-dragleave="(ev) => this.onDragLeaveField(ev)"
              t-on-drop.stop.prevent="(ev) => this.onDropField(ev, node.attrs.name)"
-             t-att-class="'o_canvas_field_card d-flex flex-column border rounded p-3 mb-2 cursor-pointer transition-all ' + 
+             t-att-class="'o_canvas_field_card d-flex flex-row align-items-center border rounded p-2 mb-2 cursor-pointer transition-all ' + 
                           ((props.selectedField &amp;&amp; props.selectedField.name === node.attrs.name) ? 'border-primary shadow-sm bg-primary bg-opacity-10' : 'bg-white border-light')"
              t-att-style="node.attrs.invisible === '1' ? 'opacity: 0.55; border-style: dashed !important;' : ''"
              t-on-click="() => this.selectField(node.attrs.name)">
             
-            <div class="d-flex justify-content-between align-items-center mb-1">
-                <!-- Field Label -->
-                <span class="fw-bold text-dark small">
-                    <t t-esc="node.attrs.string || getFieldLabel(node.attrs.name)"/>
-                </span>
-                
-                <!-- Visibility & Properties Badge Toggles -->
-                <div class="d-flex align-items-center gap-2">
-                    <span t-if="node.attrs.required === '1' || node.attrs.required === 'True'" class="badge bg-danger text-white" style="font-size:0.6rem;">Required</span>
-                    <span t-if="node.attrs.readonly === '1' || node.attrs.readonly === 'True'" class="badge bg-secondary text-white" style="font-size:0.6rem;">Read-only</span>
-                    <button class="btn btn-xs py-0 px-1 border-0 bg-transparent text-secondary" 
-                            t-att-title="node.attrs.invisible === '1' ? 'Show Field' : 'Hide Field'"
-                            t-on-click.stop="() => props.onToggleVisibility(node.attrs.name, node.attrs.invisible !== '1')">
-                        <t t-if="node.attrs.invisible === '1'">👁️‍🗨️</t>
-                        <t t-else="">👁️</t>
-                    </button>
+            <!-- Grip Handle on the left -->
+            <span class="o_drag_handle text-muted me-2 cursor-grab" 
+                  draggable="true"
+                  t-on-dragstart="(ev) => this.onDragStartField(ev, node.attrs.name, node.attrs.string || this.getFieldLabel(node.attrs.name))">⋮⋮</span>
+            
+            <!-- Content area of the field -->
+            <div class="flex-grow-1 min-w-0">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="fw-bold text-dark small text-truncate">
+                        <t t-esc="node.attrs.string || getFieldLabel(node.attrs.name)"/>
+                    </span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span t-if="node.attrs.required === '1' || node.attrs.required === 'True'" class="badge bg-danger text-white" style="font-size:0.6rem;">Required</span>
+                        <span t-if="node.attrs.readonly === '1' || node.attrs.readonly === 'True'" class="badge bg-secondary text-white" style="font-size:0.6rem;">Read-only</span>
+                        <button class="btn btn-xs py-0 px-1 border-0 bg-transparent text-secondary" 
+                                t-att-title="node.attrs.invisible === '1' ? 'Show Field' : 'Hide Field'"
+                                t-on-click.stop="() => props.onToggleVisibility(node.attrs.name, node.attrs.invisible !== '1')">
+                            <t t-if="node.attrs.invisible === '1'">👁️‍🗨️</t>
+                            <t t-else="">👁️</t>
+                        </button>
+                    </div>
                 </div>
-            </div>
-
-            <!-- Technical Mockup Input -->
-            <div class="font-monospace text-muted mt-2 small bg-light p-1 rounded" style="font-size: 0.75rem;">
-                &lt;field name="<t t-esc="node.attrs.name"/>" <t t-if="node.attrs.widget">widget="<t t-esc="node.attrs.widget"/>"</t>/&gt;
+                <div class="font-monospace text-muted small bg-light p-1 rounded text-truncate" style="font-size: 0.75rem;">
+                    &lt;field name="<t t-esc="node.attrs.name"/>" <t t-if="node.attrs.widget">widget="<t t-esc="node.attrs.widget"/>"</t>/&gt;
+                </div>
             </div>
         </div>
 

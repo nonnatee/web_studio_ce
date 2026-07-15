@@ -13,6 +13,8 @@ export class StudioCeCanvas extends Component {
             pageName: "",
             showInsertModal: false,
             mode: "canvas", // canvas (edit), form (realistic form), list (realistic list)
+            showDeleteConfirmation: false,
+            groupToDelete: null,
         });
 
         onWillStart(() => {
@@ -82,10 +84,41 @@ export class StudioCeCanvas extends Component {
     }
 
     onDragStartField(ev, fieldName, fieldLabel) {
+        const targetXpath = `//field[@name='${fieldName}']`;
+        const findNode = (n) => {
+            if (n.name === "field" && n.attrs.name === fieldName) return n;
+            if (n.children) {
+                for (const child of n.children) {
+                    const res = findNode(child);
+                    if (res) return res;
+                }
+            }
+            return null;
+        };
+        let serialized = `<field name="${fieldName}"/>`;
+        for (const root of this.state.archTree) {
+            const match = findNode(root);
+            if (match) {
+                serialized = this.serializeNode(match);
+                break;
+            }
+        }
         ev.dataTransfer.setData("text/plain", JSON.stringify({
             type: "existing",
             name: fieldName,
-            label: fieldLabel
+            xpath: targetXpath,
+            xml: serialized
+        }));
+        ev.dataTransfer.effectAllowed = "move";
+    }
+
+    onDragStartGroup(ev, node) {
+        const xpath = this.getNodeXpath(node);
+        const serialized = this.serializeNode(node);
+        ev.dataTransfer.setData("text/plain", JSON.stringify({
+            type: "group",
+            xpath: xpath,
+            xml: serialized
         }));
         ev.dataTransfer.effectAllowed = "move";
     }
@@ -95,7 +128,6 @@ export class StudioCeCanvas extends Component {
         const midpoint = rect.top + rect.height / 2;
         const isBefore = ev.clientY < midpoint;
 
-        // Remove active class from all other fields
         const elements = document.querySelectorAll(".o_canvas_field_card");
         elements.forEach(el => {
             el.classList.remove("o_drag_over_before", "o_drag_over_after");
@@ -122,12 +154,18 @@ export class StudioCeCanvas extends Component {
             const midpoint = rect.top + rect.height / 2;
             const isBefore = ev.clientY < midpoint;
             const position = isBefore ? "before" : "after";
+            const targetXpath = `//field[@name='${targetFieldName}']`;
 
             if (data.type === "existing") {
                 if (data.name === targetFieldName) return;
-                await this.props.onInsertField(data.name, targetFieldName, position);
+                await this.props.onMoveNode(data.xpath, targetXpath, position, data.xml);
+            } else if (data.type === "group") {
+                if (data.xpath === targetXpath) return;
+                await this.props.onMoveNode(data.xpath, targetXpath, position, data.xml);
             } else if (data.type === "new") {
                 await this.props.onInsertNewField(data.fieldType, targetFieldName, position);
+            } else if (data.type === "new_group") {
+                await this.props.onInsertNewGroup(targetFieldName, position);
             }
         } catch (e) {
             console.error("Drop field error", e);
@@ -148,38 +186,134 @@ export class StudioCeCanvas extends Component {
         if (!dataStr) return;
         try {
             const data = JSON.parse(dataStr);
-
-            let targetXpath = "//sheet";
+            let targetXpath = this.getNodeXpath(node);
             let position = "inside";
-            
-            if (node.name === "group") {
-                if (node.attrs.string) {
-                    targetXpath = `//group[@string='${node.attrs.string}']`;
-                } else if (node.attrs.name) {
-                    targetXpath = `//group[@name='${node.attrs.name}']`;
-                } else {
-                    targetXpath = "//group";
-                }
-                position = "inside";
-            } else if (node.name === "page") {
-                if (node.attrs.string) {
-                    targetXpath = `//page[@string='${node.attrs.string}']`;
-                } else if (node.attrs.name) {
-                    targetXpath = `//page[@name='${node.attrs.name}']`;
-                } else {
-                    targetXpath = "//page";
-                }
-                position = "inside";
-            }
 
             if (data.type === "existing") {
-                await this.props.onInsertField(data.name, targetXpath, position);
+                if (data.xpath === targetXpath) return;
+                await this.props.onMoveNode(data.xpath, targetXpath, position, data.xml);
+            } else if (data.type === "group") {
+                if (data.xpath === targetXpath) return;
+                await this.props.onMoveNode(data.xpath, targetXpath, position, data.xml);
             } else if (data.type === "new") {
-                await this.props.onInsertNewField(data.fieldType, targetXpath, position);
+                const targetField = (node.name === "sheet") ? null : targetXpath;
+                await this.props.onInsertNewField(data.fieldType, targetField, position);
+            } else if (data.type === "new_group") {
+                const targetField = (node.name === "sheet") ? null : targetXpath;
+                await this.props.onInsertNewGroup(targetField, position);
             }
         } catch (e) {
             console.error("Drop container error", e);
         }
+    }
+
+    selectGroup(node) {
+        const xpath = this.getNodeXpath(node);
+        this.props.onSelectField({
+            id: xpath,
+            name: xpath,
+            field_description: node.attrs.string || "",
+            ttype: "group"
+        });
+    }
+
+    onDeleteGroupClick(node) {
+        // Collect children that are fields or subgroups
+        const children = (node.children || []).filter(c => c.name === "field" || c.name === "group");
+        if (children.length > 0) {
+            this.state.groupToDelete = node;
+            this.state.showDeleteConfirmation = true;
+        } else {
+            const xpath = this.getNodeXpath(node);
+            this.props.onDeleteNode(xpath);
+        }
+    }
+
+    closeDeleteConfirmation() {
+        this.state.showDeleteConfirmation = false;
+        this.state.groupToDelete = null;
+    }
+
+    async confirmDeleteGroupAll() {
+        if (!this.state.groupToDelete) return;
+        const xpath = this.getNodeXpath(this.state.groupToDelete);
+        await this.props.onDeleteNode(xpath);
+        this.closeDeleteConfirmation();
+    }
+
+    async unwrapGroup() {
+        if (!this.state.groupToDelete) return;
+        const node = this.state.groupToDelete;
+        const xpath = this.getNodeXpath(node);
+        
+        let modificationXml = "";
+        for (const child of node.children) {
+            const childXml = this.serializeNode(child);
+            modificationXml += `<xpath expr="${xpath}" position="before">${childXml}</xpath>\n`;
+        }
+        modificationXml += `<xpath expr="${xpath}" position="replace"/>`;
+        
+        this.state.showDeleteConfirmation = false;
+        try {
+            await this.props.onMoveNode("", "", "", modificationXml);
+        } catch (e) {
+            console.error("Unwrap group failed", e);
+        } finally {
+            this.closeDeleteConfirmation();
+        }
+    }
+
+    serializeNode(node) {
+        let attrs = Object.entries(node.attrs || {})
+            .map(([k, v]) => `${k}="${v}"`)
+            .join(" ");
+        if (attrs) attrs = " " + attrs;
+        if (!node.children || node.children.length === 0) {
+            return `<${node.name}${attrs}/>`;
+        }
+        const childrenXml = node.children.map(c => this.serializeNode(c)).join("\n");
+        return `<${node.name}${attrs}>${childrenXml}</${node.name}>`;
+    }
+
+    getNodeXpath(node) {
+        if (!node) return "";
+        if (node.name === "field") {
+            return `//field[@name='${node.attrs.name}']`;
+        }
+        if (node.name === "group") {
+            if (node.attrs.string) {
+                return `//group[@string='${node.attrs.string}']`;
+            }
+            if (node.attrs.name) {
+                return `//group[@name='${node.attrs.name}']`;
+            }
+            const firstField = this.findFirstFieldChild(node);
+            if (firstField) {
+                return `//field[@name='${firstField.attrs.name}']/parent::group`;
+            }
+            return "//group[1]";
+        }
+        if (node.name === "page") {
+            if (node.attrs.string) {
+                return `//page[@string='${node.attrs.string}']`;
+            }
+            if (node.attrs.name) {
+                return `//page[@name='${node.attrs.name}']`;
+            }
+            return "//page[1]";
+        }
+        return "//sheet";
+    }
+
+    findFirstFieldChild(node) {
+        if (node.name === "field") return node;
+        if (node.children) {
+            for (const child of node.children) {
+                const f = this.findFirstFieldChild(child);
+                if (f) return f;
+            }
+        }
+        return null;
     }
 
     startInsertion(field) {
@@ -266,6 +400,9 @@ StudioCeCanvas.props = {
     onToggleVisibility: Function,
     onInsertField: Function,
     onInsertNewField: Function,
+    onInsertNewGroup: Function,
+    onMoveNode: Function,
+    onDeleteNode: Function,
     onOverrideProperty: Function,
     onRegister: Function,
     onViewChange: Function,

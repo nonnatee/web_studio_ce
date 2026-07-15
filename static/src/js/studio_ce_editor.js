@@ -176,6 +176,93 @@ export class StudioCeEditor extends Component {
         }
     }
 
+    async insertNewGroupIntoView(targetFieldName, position) {
+        if (!this.state.views || this.state.views.length === 0) return;
+        const viewId = this.state.viewId || this.state.views[0].id;
+        const groupXml = `<group string="New Group"/>`;
+        
+        let xpathExpr = "";
+        let finalPosition = position;
+        if (targetFieldName) {
+            if (targetFieldName.startsWith('//')) {
+                xpathExpr = targetFieldName;
+            } else {
+                xpathExpr = `//field[@name='${targetFieldName}']`;
+            }
+        } else {
+            xpathExpr = "//sheet";
+            finalPosition = "inside";
+        }
+        
+        const modificationXml = `<xpath expr="${xpathExpr}" position="${finalPosition}">${groupXml}</xpath>`;
+        
+        this.state.loading = true;
+        try {
+            const res = await this.rpc("/web_studio_ce/edit_view", {
+                view_id: viewId,
+                xpath_expr: xpathExpr,
+                modification_xml: modificationXml,
+            });
+            if (!res.error) {
+                await this.loadStudioContext();
+                const groupXpath = `//group[@string='New Group']`;
+                this.state.selectedField = {
+                    id: groupXpath,
+                    name: groupXpath,
+                    field_description: 'New Group',
+                    ttype: 'group'
+                };
+                this.state.activeTab = "fields";
+            }
+        } catch (error) {
+            console.error("Failed to insert group", error);
+        } finally {
+            this.state.loading = false;
+        }
+    }
+
+    async moveNodeInView(sourceXpath, targetXpath, position, nodeXml) {
+        if (!this.state.views || this.state.views.length === 0) return;
+        const viewId = this.state.viewId || this.state.views[0].id;
+        this.state.loading = true;
+        try {
+            const res = await this.rpc("/web_studio_ce/move_node_in_view", {
+                view_id: viewId,
+                source_xpath: sourceXpath,
+                target_xpath: targetXpath,
+                position: position,
+                node_xml: nodeXml,
+            });
+            if (!res.error) {
+                await this.loadStudioContext();
+            }
+        } catch (error) {
+            console.error("Failed to move element", error);
+        } finally {
+            this.state.loading = false;
+        }
+    }
+
+    async deleteNodeInView(xpathExpr) {
+        if (!this.state.views || this.state.views.length === 0) return;
+        const viewId = this.state.viewId || this.state.views[0].id;
+        this.state.loading = true;
+        try {
+            const res = await this.rpc("/web_studio_ce/delete_node_in_view", {
+                view_id: viewId,
+                xpath_expr: xpathExpr,
+            });
+            if (!res.error) {
+                await this.loadStudioContext();
+                this.state.selectedField = null;
+            }
+        } catch (error) {
+            console.error("Failed to delete element", error);
+        } finally {
+            this.state.loading = false;
+        }
+    }
+
     async overrideViewFieldProperty(fieldName, propName, propValue) {
         if (!this.state.views || this.state.views.length === 0) return;
         const viewId = this.state.viewId || this.state.views[0].id;

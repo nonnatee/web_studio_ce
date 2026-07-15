@@ -35,6 +35,20 @@
                         <t t-if="props.selectedField.ttype === 'properties'">
                             <PropertiesBuilder fieldName="props.selectedField.name" modelName="props.modelName"/>
                         </t>
+                        <t t-elif="props.selectedField.ttype === 'group'">
+                            <!-- Group Label Input -->
+                            <div class="mb-3">
+                                <label class="form-label text-secondary small fw-bold">Group Label</label>
+                                <input type="text" class="form-control form-control-sm"
+                                       t-att-value="props.selectedField.field_description"
+                                       t-on-change="(ev) => this.overrideProperty('string', ev.target.value)"/>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-secondary small fw-bold">XPath Target</label>
+                                <input type="text" class="form-control form-control-sm bg-light" readonly="1"
+                                       t-att-value="props.selectedField.name"/>
+                            </div>
+                        </t>
                         <t t-else="">
                             <!-- Properties Inputs (Per-View Overrides) -->
                             <div class="mb-3">
@@ -159,29 +173,65 @@
                     <t t-else="">
                         <h5 class="fw-bold mb-2">Add Custom Field</h5>
                         <div class="d-grid gap-1 mb-4 overflow-auto" style="max-height: 250px; border: 1px solid #eee; padding: 5px; border-radius: 4px;">
-                            <button class="btn btn-outline-primary btn-sm text-start py-1" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'char')" t-on-click="() => props.onAddField('char', 'Custom Label')">+ Text (Char)</button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'integer')" t-on-click="() => props.onAddField('integer', 'Custom Integer')">+ Integer</button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'float')" t-on-click="() => props.onAddField('float', 'Custom Float')">+ Float</button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'monetary')" t-on-click="() => props.onAddField('monetary', 'Custom Monetary')">+ Monetary</button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'date')" t-on-click="() => props.onAddField('date', 'Custom Date')">+ Date</button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'datetime')" t-on-click="() => props.onAddField('datetime', 'Custom Datetime')">+ Datetime</button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'boolean')" t-on-click="() => props.onAddField('boolean', 'Custom Checkbox')">+ Checkbox (Boolean)</button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'selection')" t-on-click="() => props.onAddField('selection', 'Selection List')">+ Selection Dropdown</button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'many2one')" t-on-click="() => props.onAddField('many2one', 'Related Link (m2o)')">+ Relation (Many2one)</button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'many2many')" t-on-click="() => props.onAddField('many2many', 'Relation Tags (m2m)')">+ Relation (Many2many)</button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'binary')" t-on-click="() => props.onAddField('binary', 'Custom Binary File')">+ Binary File</button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'html')" t-on-click="() => props.onAddField('html', 'Custom HTML Area')">+ HTML Field</button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1 d-flex align-items-center gap-2" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'char')" t-on-click="() => props.onAddField('char', 'Custom Label')"><span class="o_drag_handle text-muted">⋮⋮</span><span>+ Text (Char)</span></button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1 d-flex align-items-center gap-2" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'integer')" t-on-click="() => props.onAddField('integer', 'Custom Integer')"><span class="o_drag_handle text-muted">⋮⋮</span><span>+ Integer</span></button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1 d-flex align-items-center gap-2" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'float')" t-on-click="() => props.onAddField('float', 'Custom Float')"><span class="o_drag_handle text-muted">⋮⋮</span><span>+ Float</span></button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1 d-flex align-items-center gap-2" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'monetary')" t-on-click="() => props.onAddField('monetary', 'Custom Monetary')"><span class="o_drag_handle text-muted">⋮⋮</span><span>+ Monetary</span></button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1 d-flex align-items-center gap-2" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'date')" t-on-click="() => props.onAddField('date', 'Custom Date')"><span class="o_drag_handle text-muted">⋮⋮</span><span>+ Date</span></button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1 d-flex align-items-center gap-2" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'datetime')" t-on-click="() => props.onAddField('datetime', 'Custom Datetime')"><span class="o_drag_handle text-muted">⋮⋮</span><span>+ Datetime</span></button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1 d-flex align-items-center gap-2" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'boolean')" t-on-click="() => props.onAddField('boolean', 'Custom Checkbox')"><span class="o_drag_handle text-muted">⋮⋮</span><span>+ Checkbox (Boolean)</span></button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1 d-flex align-items-center gap-2" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'selection')" t-on-click="() => props.onAddField('selection', 'Selection List')"><span class="o_drag_handle text-muted">⋮⋮</span><span>+ Selection Dropdown</span></button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1 d-flex align-items-center gap-2" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'many2one')" t-on-click="() => props.onAddField('many2one', 'Related Link (m2o)')"><span class="o_drag_handle text-muted">⋮⋮</span><span>+ Relation (Many2one)</span></button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1 d-flex align-items-center gap-2" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'many2many')" t-on-click="() => props.onAddField('many2many', 'Relation Tags (m2m)')"><span class="o_drag_handle text-muted">⋮⋮</span><span>+ Relation (Many2many)</span></button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1 d-flex align-items-center gap-2" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'binary')" t-on-click="() => props.onAddField('binary', 'Custom Binary File')"><span class="o_drag_handle text-muted">⋮⋮</span><span>+ Binary File</span></button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1 d-flex align-items-center gap-2" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'html')" t-on-click="() => props.onAddField('html', 'Custom HTML Area')"><span class="o_drag_handle text-muted">⋮⋮</span><span>+ HTML Field</span></button>
+                        </div>
+
+                        <h5 class="fw-bold mb-2">Layout Components</h5>
+                        <div class="d-grid gap-1 mb-4" style="border: 1px solid #eee; padding: 5px; border-radius: 4px;">
+                            <button class="btn btn-outline-secondary btn-sm text-start py-1 d-flex align-items-center gap-2"
+                                    draggable="true"
+                                    t-on-dragstart="onDragStartNewGroup">
+                                <span class="o_drag_handle text-muted">⋮⋮</span>
+                                <span>🔳 Group Container</span>
+                            </button>
                         </div>
 
                         <h5 class="fw-bold mb-2">Existing Fields</h5>
+                        
+                        <!-- Rich Search & Filters -->
+                        <div class="mb-3">
+                            <input type="text" class="form-control form-control-sm mb-2" placeholder="🔍 Search existing fields..." t-model="state.searchQuery"/>
+                            <div class="d-flex flex-wrap gap-1 mb-2">
+                                <button class="badge border-0 py-1 px-2 cursor-pointer transition-all"
+                                        t-att-class="state.activeFilter === 'all' ? 'bg-primary text-white' : 'bg-light text-secondary'"
+                                        t-on-click="() => this.state.activeFilter = 'all'">All</button>
+                                <button class="badge border-0 py-1 px-2 cursor-pointer transition-all"
+                                        t-att-class="state.activeFilter === 'text' ? 'bg-primary text-white' : 'bg-light text-secondary'"
+                                        t-on-click="() => this.state.activeFilter = 'text'">Text</button>
+                                <button class="badge border-0 py-1 px-2 cursor-pointer transition-all"
+                                        t-att-class="state.activeFilter === 'number' ? 'bg-primary text-white' : 'bg-light text-secondary'"
+                                        t-on-click="() => this.state.activeFilter = 'number'">Numeric</button>
+                                <button class="badge border-0 py-1 px-2 cursor-pointer transition-all"
+                                        t-att-class="state.activeFilter === 'relation' ? 'bg-primary text-white' : 'bg-light text-secondary'"
+                                        t-on-click="() => this.state.activeFilter = 'relation'">Relation</button>
+                                <button class="badge border-0 py-1 px-2 cursor-pointer transition-all"
+                                        t-att-class="state.activeFilter === 'other' ? 'bg-primary text-white' : 'bg-light text-secondary'"
+                                        t-on-click="() => this.state.activeFilter = 'other'">Other</button>
+                            </div>
+                        </div>
+
                         <div class="list-group list-group-flush border rounded overflow-auto" style="max-height: 250px;">
-                            <t t-foreach="props.fields" t-as="field" t-key="field.id">
-                                <div class="list-group-item d-flex justify-content-between align-items-center py-2 px-3"
-                                     draggable="true"
-                                     t-on-dragstart="(ev) => this.onDragStartExistingField(ev, field.name, field.field_description)">
-                                    <div class="text-truncate me-2 cursor-pointer" t-on-click="() => props.onSelectField(field)">
-                                        <div class="fw-bold text-dark text-truncate small"><t t-esc="field.field_description"/></div>
-                                        <small class="text-muted font-monospace" style="font-size:0.75rem;"><t t-esc="field.name"/></small>
+                            <t t-foreach="filteredFields" t-as="field" t-key="field.id">
+                                <div class="list-group-item d-flex justify-content-between align-items-center py-2 px-3">
+                                    <div class="d-flex align-items-center gap-2 text-truncate me-2">
+                                        <span class="o_drag_handle text-muted cursor-grab" 
+                                              draggable="true" 
+                                              t-on-dragstart="(ev) => this.onDragStartExistingField(ev, field.name, field.field_description)">⋮⋮</span>
+                                        <div class="text-truncate cursor-pointer" t-on-click="() => props.onSelectField(field)">
+                                            <div class="fw-bold text-dark text-truncate small"><t t-esc="field.field_description"/></div>
+                                            <small class="text-muted font-monospace" style="font-size:0.75rem;"><t t-esc="field.name"/></small>
+                                        </div>
                                     </div>
                                     <button class="btn btn-sm btn-link py-0 px-1 text-primary flex-shrink-0" 
                                             t-if="props.views.length > 0"

@@ -12,7 +12,48 @@ export class StudioCeSidebar extends Component {
             newOptionValue: "",
             selectedRule: null,
             selectedApproval: null,
+            searchQuery: "",
+            activeFilter: "all",
         });
+    }
+
+    get filteredFields() {
+        const query = (this.state.searchQuery || "").toLowerCase().trim();
+        const filter = this.state.activeFilter;
+        let fields = this.props.fields || [];
+
+        if (query) {
+            fields = fields.filter(f => 
+                (f.name || "").toLowerCase().includes(query) || 
+                (f.field_description || "").toLowerCase().includes(query)
+            );
+        }
+
+        if (filter !== "all") {
+            fields = fields.filter(f => {
+                const type = f.ttype;
+                if (filter === "text") {
+                    return ["char", "text", "html"].includes(type);
+                } else if (filter === "number") {
+                    return ["integer", "float", "monetary"].includes(type);
+                } else if (filter === "relation") {
+                    return ["many2one", "many2many", "one2many"].includes(type);
+                } else if (filter === "other") {
+                    return !["char", "text", "html", "integer", "float", "monetary", "many2one", "many2many", "one2many"].includes(type);
+                }
+                return true;
+            });
+        }
+
+        return fields;
+    }
+
+    onDragStartNewGroup(ev) {
+        ev.dataTransfer.setData("text/plain", JSON.stringify({
+            type: "new_group",
+            label: "New Group"
+        }));
+        ev.dataTransfer.effectAllowed = "copyMove";
     }
 
     onDragStartNewField(ev, type) {

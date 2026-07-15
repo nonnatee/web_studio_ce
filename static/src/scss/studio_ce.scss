@@ -304,3 +304,72 @@
         background-color: rgba(0, 123, 255, 0.02) !important;
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Grip Handles & Groups & Filters Styling
+// ─────────────────────────────────────────────────────────────────────────────
+.o_drag_handle {
+    cursor: grab;
+    font-size: 0.95rem;
+    font-weight: bold;
+    user-select: none;
+    padding: 0 4px;
+    display: inline-block;
+    transition: color 0.15s ease-in-out;
+    
+    &:hover {
+        color: #007bff !important;
+    }
+    
+    &:active {
+        cursor: grabbing;
+    }
+}
+
+.o_canvas_group_header {
+    background-color: rgba(0, 0, 0, 0.02);
+    padding: 4px 8px;
+    border-radius: 4px 4px 0 0;
+    
+    .o_drag_handle {
+        color: #888888;
+    }
+}
+
+.o_canvas_group {
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    transition: all 0.2s ease-in-out;
+    
+    &:hover {
+        border-color: rgba(0, 123, 255, 0.3) !important;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+    }
+    
+    &.border-primary {
+        border: 1.5px solid #007bff !important;
+        background-color: rgba(0, 123, 255, 0.02) !important;
+    }
+}
+
+.o_canvas_field_card {
+    .o_drag_handle {
+        opacity: 0.5;
+        &:hover {
+            opacity: 1;
+        }
+    }
+}
+
+.cursor-grab {
+    cursor: grab !important;
+}
+
+.badge {
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 12px;
+    
+    &.bg-primary {
+        box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+    }
+}

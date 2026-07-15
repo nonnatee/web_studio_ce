@@ -858,7 +858,11 @@ class StudioCeController(http.Controller):
         }
         xml_attr = attr_map.get(prop_name, prop_name)
 
-        xpath_expr = f"//field[@name='{field_name}']"
+        if field_name.startswith('//'):
+            xpath_expr = field_name
+        else:
+            xpath_expr = f"//field[@name='{field_name}']"
+
         modification_xml = f'<xpath expr="{xpath_expr}" position="attributes"><attribute name="{xml_attr}">{prop_value}</attribute></xpath>'
 
         res = self.edit_view(view_id=view_id, xpath_expr=xpath_expr, modification_xml=modification_xml)
@@ -870,6 +874,53 @@ class StudioCeController(http.Controller):
             if latest_log:
                 latest_log.name = f"Overrode property '{prop_name}' on '{field_name}' to '{prop_value}'"
                 latest_log.log_type = 'property_override'
+        return res
+
+    @http.route('/web_studio_ce/move_node_in_view', type='json', auth='user')
+    def move_node_in_view(self, view_id, source_xpath, target_xpath, position, node_xml):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        target_view = request.env['ir.ui.view'].browse(view_id)
+        if not target_view.exists():
+            return {'error': 'Target view not found.'}
+
+        if not source_xpath and not target_xpath:
+            modification_xml = node_xml
+        else:
+            # 1. Remove node from original position
+            modification_xml = f'<xpath expr="{source_xpath}" position="replace"/>\n'
+            # 2. Insert node at the new position
+            modification_xml += f'<xpath expr="{target_xpath}" position="{position}">{node_xml}</xpath>'
+
+        res = self.edit_view(view_id=view_id, xpath_expr=target_xpath or "//sheet", modification_xml=modification_xml)
+        if 'error' not in res:
+            latest_log = request.env['studio.ce.log'].search([
+                ('view_id', '=', target_view.id),
+                ('log_type', '=', 'view_modify')
+            ], limit=1, order='id desc')
+            if latest_log:
+                latest_log.name = f"Moved layout element"
+        return res
+
+    @http.route('/web_studio_ce/delete_node_in_view', type='json', auth='user')
+    def delete_node_in_view(self, view_id, xpath_expr):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        target_view = request.env['ir.ui.view'].browse(view_id)
+        if not target_view.exists():
+            return {'error': 'Target view not found.'}
+
+        modification_xml = f'<xpath expr="{xpath_expr}" position="replace"/>'
+        res = self.edit_view(view_id=view_id, xpath_expr=xpath_expr, modification_xml=modification_xml)
+        if 'error' not in res:
+            latest_log = request.env['studio.ce.log'].search([
+                ('view_id', '=', target_view.id),
+                ('log_type', '=', 'view_modify')
+            ], limit=1, order='id desc')
+            if latest_log:
+                latest_log.name = f"Deleted layout element"
         return res
 
     @http.route('/web_studio_ce/get_customisation_logs', type='json', auth='user')

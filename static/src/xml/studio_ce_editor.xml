@@ -65,6 +65,9 @@
                                          onToggleVisibility.bind="toggleFieldVisibility"
                                          onInsertField.bind="insertFieldIntoView"
                                          onInsertNewField.bind="insertNewFieldIntoView"
+                                         onInsertNewGroup.bind="insertNewGroupIntoView"
+                                         onMoveNode.bind="moveNodeInView"
+                                         onDeleteNode.bind="deleteNodeInView"
                                          onOverrideProperty.bind="overrideViewFieldProperty"
                                          onViewChange.bind="onViewChange"/>
                     </t>
