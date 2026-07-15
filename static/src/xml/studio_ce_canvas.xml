@@ -203,7 +203,7 @@
         <!-- Field Node -->
         <div t-elif="node.name === 'field'" 
              draggable="true"
-             t-on-dragstart="(ev) => this.onDragStartField(ev, node.attrs.name, node.attrs.string || getFieldLabel(node.attrs.name))"
+             t-on-dragstart="(ev) => this.onDragStartField(ev, node.attrs.name, node.attrs.string || this.getFieldLabel(node.attrs.name))"
              t-on-dragover.stop.prevent="(ev) => this.onDragOverField(ev, node.attrs.name)"
              t-on-dragleave="(ev) => this.onDragLeaveField(ev)"
              t-on-drop.stop.prevent="(ev) => this.onDropField(ev, node.attrs.name)"
