@@ -136,15 +136,24 @@
         </div>
 
         <!-- Sheet Node -->
-        <div t-elif="node.name === 'sheet'" class="o_canvas_sheet border rounded shadow-sm p-4 bg-white mb-4 position-relative">
+        <div t-elif="node.name === 'sheet'" class="o_canvas_sheet border rounded shadow-sm p-4 bg-white mb-4 position-relative"
+             t-on-dragover.stop.prevent="(ev) => this.onDragOverContainer(ev, node)"
+             t-on-dragleave="(ev) => this.onDragLeaveContainer(ev)"
+             t-on-drop.stop.prevent="(ev) => this.onDropContainer(ev, node)">
             <div class="position-absolute top-0 start-0 m-2 text-muted font-monospace" style="font-size: 0.65rem;">sheet</div>
             <t t-foreach="node.children" t-as="child" t-key="child_index">
                 <t t-call="web_studio_ce.CanvasNode"><t t-set="node" t-value="child"/></t>
             </t>
+            <div t-if="node.children.length === 0" class="o_canvas_empty_placeholder text-center p-4 text-muted border border-dashed rounded my-2">
+                Drop fields here
+            </div>
         </div>
 
         <!-- Group Node -->
-        <div t-elif="node.name === 'group'" class="o_canvas_group border rounded p-3 mb-3 bg-light bg-opacity-25 position-relative">
+        <div t-elif="node.name === 'group'" class="o_canvas_group border rounded p-3 mb-3 bg-light bg-opacity-25 position-relative"
+             t-on-dragover.stop.prevent="(ev) => this.onDragOverContainer(ev, node)"
+             t-on-dragleave="(ev) => this.onDragLeaveContainer(ev)"
+             t-on-drop.stop.prevent="(ev) => this.onDropContainer(ev, node)">
             <div class="position-absolute top-0 start-0 m-1 text-muted font-monospace" style="font-size: 0.65rem;">group</div>
             <div t-if="node.attrs.string" class="fw-bold text-secondary border-bottom pb-1 mb-3 small"><t t-esc="node.attrs.string"/></div>
             
@@ -154,6 +163,9 @@
                         <t t-call="web_studio_ce.CanvasNode"><t t-set="node" t-value="child"/></t>
                     </div>
                 </t>
+            </div>
+            <div t-if="node.children.length === 0" class="o_canvas_empty_placeholder text-center p-3 text-muted border border-dashed rounded bg-white my-1">
+                Drop fields here
             </div>
         </div>
 
@@ -176,14 +188,25 @@
         </div>
 
         <!-- Page Node -->
-        <div t-elif="node.name === 'page'" class="o_canvas_page py-2">
+        <div t-elif="node.name === 'page'" class="o_canvas_page py-2"
+             t-on-dragover.stop.prevent="(ev) => this.onDragOverContainer(ev, node)"
+             t-on-dragleave="(ev) => this.onDragLeaveContainer(ev)"
+             t-on-drop.stop.prevent="(ev) => this.onDropContainer(ev, node)">
             <t t-foreach="node.children" t-as="child" t-key="child_index">
                 <t t-call="web_studio_ce.CanvasNode"><t t-set="node" t-value="child"/></t>
             </t>
+            <div t-if="node.children.length === 0" class="o_canvas_empty_placeholder text-center p-3 text-muted border border-dashed rounded bg-light bg-opacity-50 my-1">
+                Drop fields here
+            </div>
         </div>
 
         <!-- Field Node -->
         <div t-elif="node.name === 'field'" 
+             draggable="true"
+             t-on-dragstart="(ev) => this.onDragStartField(ev, node.attrs.name, node.attrs.string || getFieldLabel(node.attrs.name))"
+             t-on-dragover.stop.prevent="(ev) => this.onDragOverField(ev, node.attrs.name)"
+             t-on-dragleave="(ev) => this.onDragLeaveField(ev)"
+             t-on-drop.stop.prevent="(ev) => this.onDropField(ev, node.attrs.name)"
              t-att-class="'o_canvas_field_card d-flex flex-column border rounded p-3 mb-2 cursor-pointer transition-all ' + 
                           ((props.selectedField &amp;&amp; props.selectedField.name === node.attrs.name) ? 'border-primary shadow-sm bg-primary bg-opacity-10' : 'bg-white border-light')"
              t-att-style="node.attrs.invisible === '1' ? 'opacity: 0.55; border-style: dashed !important;' : ''"

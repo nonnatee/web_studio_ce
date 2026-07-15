@@ -271,3 +271,36 @@
         line-height: 1.2;
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Drag & Drop Indicators
+// ─────────────────────────────────────────────────────────────────────────────
+.o_canvas_field_card {
+    &.o_drag_over_before {
+        border-top: 3px solid #007bff !important;
+        margin-top: 4px;
+    }
+
+    &.o_drag_over_after {
+        border-bottom: 3px solid #007bff !important;
+        margin-bottom: 4px;
+    }
+}
+
+.o_canvas_empty_placeholder {
+    transition: all 0.2s ease-in-out;
+    &:hover, &.o_drag_over_container {
+        border-color: #007bff !important;
+        background-color: rgba(0, 123, 255, 0.05) !important;
+        color: #007bff !important;
+    }
+}
+
+.o_canvas_sheet, .o_canvas_group, .o_canvas_page {
+    transition: all 0.2s ease-in-out;
+    
+    &.o_drag_over_container {
+        border: 2px dashed #007bff !important;
+        background-color: rgba(0, 123, 255, 0.02) !important;
+    }
+}

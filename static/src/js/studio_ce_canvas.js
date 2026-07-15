@@ -81,6 +81,107 @@ export class StudioCeCanvas extends Component {
         }
     }
 
+    onDragStartField(ev, fieldName, fieldLabel) {
+        ev.dataTransfer.setData("text/plain", JSON.stringify({
+            type: "existing",
+            name: fieldName,
+            label: fieldLabel
+        }));
+        ev.dataTransfer.effectAllowed = "move";
+    }
+
+    onDragOverField(ev, targetFieldName) {
+        const rect = ev.currentTarget.getBoundingClientRect();
+        const midpoint = rect.top + rect.height / 2;
+        const isBefore = ev.clientY < midpoint;
+
+        // Remove active class from all other fields
+        const elements = document.querySelectorAll(".o_canvas_field_card");
+        elements.forEach(el => {
+            el.classList.remove("o_drag_over_before", "o_drag_over_after");
+        });
+
+        if (isBefore) {
+            ev.currentTarget.classList.add("o_drag_over_before");
+        } else {
+            ev.currentTarget.classList.add("o_drag_over_after");
+        }
+    }
+
+    onDragLeaveField(ev) {
+        ev.currentTarget.classList.remove("o_drag_over_before", "o_drag_over_after");
+    }
+
+    async onDropField(ev, targetFieldName) {
+        ev.currentTarget.classList.remove("o_drag_over_before", "o_drag_over_after");
+        const dataStr = ev.dataTransfer.getData("text/plain");
+        if (!dataStr) return;
+        try {
+            const data = JSON.parse(dataStr);
+            const rect = ev.currentTarget.getBoundingClientRect();
+            const midpoint = rect.top + rect.height / 2;
+            const isBefore = ev.clientY < midpoint;
+            const position = isBefore ? "before" : "after";
+
+            if (data.type === "existing") {
+                if (data.name === targetFieldName) return;
+                await this.props.onInsertField(data.name, targetFieldName, position);
+            } else if (data.type === "new") {
+                await this.props.onInsertNewField(data.fieldType, targetFieldName, position);
+            }
+        } catch (e) {
+            console.error("Drop field error", e);
+        }
+    }
+
+    onDragOverContainer(ev, node) {
+        ev.currentTarget.classList.add("o_drag_over_container");
+    }
+
+    onDragLeaveContainer(ev) {
+        ev.currentTarget.classList.remove("o_drag_over_container");
+    }
+
+    async onDropContainer(ev, node) {
+        ev.currentTarget.classList.remove("o_drag_over_container");
+        const dataStr = ev.dataTransfer.getData("text/plain");
+        if (!dataStr) return;
+        try {
+            const data = JSON.parse(dataStr);
+
+            let targetXpath = "//sheet";
+            let position = "inside";
+            
+            if (node.name === "group") {
+                if (node.attrs.string) {
+                    targetXpath = `//group[@string='${node.attrs.string}']`;
+                } else if (node.attrs.name) {
+                    targetXpath = `//group[@name='${node.attrs.name}']`;
+                } else {
+                    targetXpath = "//group";
+                }
+                position = "inside";
+            } else if (node.name === "page") {
+                if (node.attrs.string) {
+                    targetXpath = `//page[@string='${node.attrs.string}']`;
+                } else if (node.attrs.name) {
+                    targetXpath = `//page[@name='${node.attrs.name}']`;
+                } else {
+                    targetXpath = "//page";
+                }
+                position = "inside";
+            }
+
+            if (data.type === "existing") {
+                await this.props.onInsertField(data.name, targetXpath, position);
+            } else if (data.type === "new") {
+                await this.props.onInsertNewField(data.fieldType, targetXpath, position);
+            }
+        } catch (e) {
+            console.error("Drop container error", e);
+        }
+    }
+
     startInsertion(field) {
         this.state.insertingField = field;
         this.state.showInsertModal = true;
@@ -164,6 +265,7 @@ StudioCeCanvas.props = {
     onSelectField: Function,
     onToggleVisibility: Function,
     onInsertField: Function,
+    onInsertNewField: Function,
     onOverrideProperty: Function,
     onRegister: Function,
     onViewChange: Function,

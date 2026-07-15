@@ -225,21 +225,32 @@ class StudioCeController(http.Controller):
         ], limit=1)
 
         if not studio_view:
+            # If modification_xml already starts with <data>, don't double wrap
+            arch_xml = modification_xml if modification_xml.strip().startswith('<data>') else f'<data>{modification_xml}</data>'
             studio_view = request.env['ir.ui.view'].create({
                 'name': f'{target_view.name}_studio_ce_custom',
                 'model': target_view.model,
                 'inherit_id': target_view.id,
                 'mode': 'extension',
                 'is_studio_ce': True,
-                'arch': f'<data>{modification_xml}</data>'
+                'arch': arch_xml
             })
         else:
             # Append modifications to the existing inherited view arch
             try:
                 parser = etree.XMLParser(remove_blank_text=True)
                 root = etree.fromstring(studio_view.arch, parser=parser)
-                new_element = etree.fromstring(modification_xml, parser=parser)
-                root.append(new_element)
+                
+                # Wrap inside a dummy parent to parse multiple adjacent tags, unless it's already wrapped in <data>
+                stripped_xml = modification_xml.strip()
+                if stripped_xml.startswith('<data>'):
+                    new_elements = etree.fromstring(stripped_xml, parser=parser)
+                else:
+                    wrapped_xml = f"<data>{modification_xml}</data>"
+                    new_elements = etree.fromstring(wrapped_xml, parser=parser)
+                
+                for element in new_elements:
+                    root.append(element)
                 studio_view.arch = etree.tostring(root, encoding='utf-8', pretty_print=True).decode('utf-8')
             except Exception as e:
                 return {'error': f'XML Parsing Error: {str(e)}'}
@@ -745,6 +756,34 @@ class StudioCeController(http.Controller):
         if not target_view.exists():
             return {'error': 'Target view not found.'}
 
+        # Check if the field already exists in the compiled layout
+        field_exists = False
+        try:
+            if hasattr(target_view, 'get_combined_arch'):
+                combined_arch = target_view.get_combined_arch()
+            else:
+                arch_tree = target_view._get_combined_arch()
+                combined_arch = etree.tostring(arch_tree, encoding='unicode')
+            
+            combined_tree = etree.fromstring(combined_arch)
+            # Find any occurrence of the field name
+            field_nodes = combined_tree.xpath(f"//field[@name='{field_name}']")
+            if field_nodes:
+                field_exists = True
+        except Exception:
+            # Fallback to checking the studio view arch if combined arch check fails
+            studio_view = request.env['ir.ui.view'].search([
+                ('inherit_id', '=', target_view.id),
+                ('is_studio_ce', '=', True)
+            ], limit=1)
+            if studio_view and f'name="{field_name}"' in (studio_view.arch or ''):
+                field_exists = True
+
+        modification_xml = ""
+        if field_exists:
+            # Prepend a replacement/removal xpath to remove the field from its previous position
+            modification_xml += f'<xpath expr="//field[@name=\'{field_name}\']" position="replace"/>\n'
+
         # Build modification XML
         field_xml = f'<field name="{field_name}"/>'
         if group_name:
@@ -753,12 +792,15 @@ class StudioCeController(http.Controller):
             field_xml = f'<page string="{page_name}">{field_xml}</page>'
 
         if target_field_name:
-            xpath_expr = f"//field[@name='{target_field_name}']"
+            if target_field_name.startswith('//'):
+                xpath_expr = target_field_name
+            else:
+                xpath_expr = f"//field[@name='{target_field_name}']"
         else:
             xpath_expr = "//sheet"
             position = "inside"
 
-        modification_xml = f'<xpath expr="{xpath_expr}" position="{position}">{field_xml}</xpath>'
+        modification_xml += f'<xpath expr="{xpath_expr}" position="{position}">{field_xml}</xpath>'
 
         res = self.edit_view(view_id=view_id, xpath_expr=xpath_expr, modification_xml=modification_xml)
         if 'error' not in res:
@@ -767,7 +809,10 @@ class StudioCeController(http.Controller):
                 ('log_type', '=', 'view_modify')
             ], limit=1, order='id desc')
             if latest_log:
-                latest_log.name = f"Inserted field '{field_name}' {position} '{target_field_name or 'sheet'}'"
+                if field_exists:
+                    latest_log.name = f"Relocated field '{field_name}' {position} '{target_field_name or 'sheet'}'"
+                else:
+                    latest_log.name = f"Inserted field '{field_name}' {position} '{target_field_name or 'sheet'}'"
         return res
 
     @http.route('/web_studio_ce/toggle_field_visibility', type='json', auth='user')

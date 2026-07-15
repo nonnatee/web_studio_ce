@@ -15,6 +15,23 @@ export class StudioCeSidebar extends Component {
         });
     }
 
+    onDragStartNewField(ev, type) {
+        ev.dataTransfer.setData("text/plain", JSON.stringify({
+            type: "new",
+            fieldType: type
+        }));
+        ev.dataTransfer.effectAllowed = "copyMove";
+    }
+
+    onDragStartExistingField(ev, name, label) {
+        ev.dataTransfer.setData("text/plain", JSON.stringify({
+            type: "existing",
+            name: name,
+            label: label
+        }));
+        ev.dataTransfer.effectAllowed = "move";
+    }
+
     addSelectionOption() {
         if (!this.state.newOptionKey || !this.state.newOptionValue) return;
         const options = [...(this.props.selectedField.selectionOptions || [])];

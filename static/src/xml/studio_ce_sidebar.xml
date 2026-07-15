@@ -159,24 +159,26 @@
                     <t t-else="">
                         <h5 class="fw-bold mb-2">Add Custom Field</h5>
                         <div class="d-grid gap-1 mb-4 overflow-auto" style="max-height: 250px; border: 1px solid #eee; padding: 5px; border-radius: 4px;">
-                            <button class="btn btn-outline-primary btn-sm text-start py-1" t-on-click="() => props.onAddField('char', 'Custom Label')">+ Text (Char)</button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1" t-on-click="() => props.onAddField('integer', 'Custom Integer')">+ Integer</button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1" t-on-click="() => props.onAddField('float', 'Custom Float')">+ Float</button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1" t-on-click="() => props.onAddField('monetary', 'Custom Monetary')">+ Monetary</button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1" t-on-click="() => props.onAddField('date', 'Custom Date')">+ Date</button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1" t-on-click="() => props.onAddField('datetime', 'Custom Datetime')">+ Datetime</button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1" t-on-click="() => props.onAddField('boolean', 'Custom Checkbox')">+ Checkbox (Boolean)</button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1" t-on-click="() => props.onAddField('selection', 'Selection List')">+ Selection Dropdown</button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1" t-on-click="() => props.onAddField('many2one', 'Related Link (m2o)')">+ Relation (Many2one)</button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1" t-on-click="() => props.onAddField('many2many', 'Relation Tags (m2m)')">+ Relation (Many2many)</button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1" t-on-click="() => props.onAddField('binary', 'Custom Binary File')">+ Binary File</button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1" t-on-click="() => props.onAddField('html', 'Custom HTML Area')">+ HTML Field</button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'char')" t-on-click="() => props.onAddField('char', 'Custom Label')">+ Text (Char)</button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'integer')" t-on-click="() => props.onAddField('integer', 'Custom Integer')">+ Integer</button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'float')" t-on-click="() => props.onAddField('float', 'Custom Float')">+ Float</button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'monetary')" t-on-click="() => props.onAddField('monetary', 'Custom Monetary')">+ Monetary</button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'date')" t-on-click="() => props.onAddField('date', 'Custom Date')">+ Date</button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'datetime')" t-on-click="() => props.onAddField('datetime', 'Custom Datetime')">+ Datetime</button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'boolean')" t-on-click="() => props.onAddField('boolean', 'Custom Checkbox')">+ Checkbox (Boolean)</button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'selection')" t-on-click="() => props.onAddField('selection', 'Selection List')">+ Selection Dropdown</button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'many2one')" t-on-click="() => props.onAddField('many2one', 'Related Link (m2o)')">+ Relation (Many2one)</button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'many2many')" t-on-click="() => props.onAddField('many2many', 'Relation Tags (m2m)')">+ Relation (Many2many)</button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'binary')" t-on-click="() => props.onAddField('binary', 'Custom Binary File')">+ Binary File</button>
+                            <button class="btn btn-outline-primary btn-sm text-start py-1" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'html')" t-on-click="() => props.onAddField('html', 'Custom HTML Area')">+ HTML Field</button>
                         </div>
 
                         <h5 class="fw-bold mb-2">Existing Fields</h5>
                         <div class="list-group list-group-flush border rounded overflow-auto" style="max-height: 250px;">
                             <t t-foreach="props.fields" t-as="field" t-key="field.id">
-                                <div class="list-group-item d-flex justify-content-between align-items-center py-2 px-3">
+                                <div class="list-group-item d-flex justify-content-between align-items-center py-2 px-3"
+                                     draggable="true"
+                                     t-on-dragstart="(ev) => this.onDragStartExistingField(ev, field.name, field.field_description)">
                                     <div class="text-truncate me-2 cursor-pointer" t-on-click="() => props.onSelectField(field)">
                                         <div class="fw-bold text-dark text-truncate small"><t t-esc="field.field_description"/></div>
                                         <small class="text-muted font-monospace" style="font-size:0.75rem;"><t t-esc="field.name"/></small>

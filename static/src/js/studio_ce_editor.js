@@ -114,6 +114,68 @@ export class StudioCeEditor extends Component {
         }
     }
 
+    async insertNewFieldIntoView(fieldType, targetFieldName, position, groupName, pageName) {
+        const fieldName = `x_studio_field_${Date.now().toString().slice(-4)}`;
+        const labelMap = {
+            char: 'New Text',
+            integer: 'New Integer',
+            float: 'New Float',
+            monetary: 'New Monetary',
+            date: 'New Date',
+            datetime: 'New Datetime',
+            boolean: 'New Checkbox',
+            selection: 'New Selection',
+            many2one: 'New Many2one',
+            many2many: 'New Many2many',
+            binary: 'New Binary',
+            html: 'New HTML',
+        };
+        const label = labelMap[fieldType] || 'New Field';
+        
+        this.state.loading = true;
+        try {
+            // 1. Create the field
+            const result = await this.rpc("/web_studio_ce/add_field", {
+                model_name: this.state.model,
+                field_name: fieldName,
+                field_label: label,
+                field_type: fieldType,
+            });
+            
+            if (result.error) {
+                console.error("Failed to add field", result.error);
+                return;
+            }
+            
+            // 2. Insert field into view
+            if (!this.state.views || this.state.views.length === 0) return;
+            const viewId = this.state.viewId || this.state.views[0].id;
+            
+            const res = await this.rpc("/web_studio_ce/insert_field_into_view", {
+                view_id: viewId,
+                field_name: fieldName,
+                target_field_name: targetFieldName,
+                position: position,
+                group_name: groupName,
+                page_name: pageName,
+            });
+            
+            if (!res.error) {
+                await this.loadStudioContext();
+                // 3. Auto-select the newly created field and open properties
+                const newField = this.state.fields.find(f => f.name === fieldName);
+                if (newField) {
+                    this.state.selectedField = newField;
+                    this.state.activeTab = "fields";
+                }
+            }
+        } catch (error) {
+            console.error("Failed to insert new field", error);
+        } finally {
+            this.state.loading = false;
+        }
+    }
+
     async overrideViewFieldProperty(fieldName, propName, propValue) {
         if (!this.state.views || this.state.views.length === 0) return;
         const viewId = this.state.viewId || this.state.views[0].id;
