@@ -5,6 +5,23 @@ from lxml import etree
 
 class StudioCeController(http.Controller):
 
+    def _reload_registry(self, env, model_name=None):
+        """Helper to flush pending database changes and reload the Odoo model registry."""
+        try:
+            env.flush_all()
+        except AttributeError:
+            if hasattr(env, 'cr') and hasattr(env.cr, 'flush'):
+                env.cr.flush()
+        
+        registry = env.registry
+        if hasattr(registry, '_setup_models__'):
+            registry._setup_models__(env.cr)
+        elif hasattr(registry, 'setup_models'):
+            registry.setup_models(env.cr)
+            
+        if hasattr(registry, 'init_models') and model_name:
+            registry.init_models(env.cr, [model_name], env.context)
+
     @http.route('/web_studio_ce/get_studio_context', type='json', auth='user')
     def get_studio_context(self, model_name, view_id=None):
         """Returns metadata about fields, views, automations, and groups for a given model."""
@@ -194,8 +211,7 @@ class StudioCeController(http.Controller):
         })
         
         # Trigger Odoo Registry reload so the new DB column is physically created
-        request.env.registry.setup_models(request.cr)
-        request.env.registry.init_models(request.cr, [model_name], request.context)
+        self._reload_registry(request.env, model_name)
 
         return {
             'id': new_field.id,
@@ -371,8 +387,7 @@ class StudioCeController(http.Controller):
         })
 
         # Setup models & init registry to instantiate the table and dynamic fields (like x_name)
-        request.env.registry.setup_models(request.cr)
-        request.env.registry.init_models(request.cr, [model_name], request.context)
+        self._reload_registry(request.env, model_name)
 
         # Create default Form View
         form_view = request.env['ir.ui.view'].create({
@@ -423,8 +438,7 @@ class StudioCeController(http.Controller):
         menu = request.env['ir.ui.menu'].create(menu_vals)
 
         # Refresh Odoo registry again
-        request.env.registry.setup_models(request.cr)
-        request.env.registry.init_models(request.cr, [model_name], request.context)
+        self._reload_registry(request.env, model_name)
 
         return {
             'model_id': model.id,
@@ -628,10 +642,8 @@ class StudioCeController(http.Controller):
 
         if field_vals:
             field.write(field_vals)
-            # Reload registry if critical properties changed
             if any(k in field_vals for k in ['required', 'readonly', 'relation', 'selection', 'compute', 'depends']):
-                request.env.registry.setup_models(request.cr)
-                request.env.registry.init_models(request.cr, [model_name], request.context)
+                self._reload_registry(request.env, model_name)
 
         return {'status': 'success'}
 
@@ -808,6 +820,10 @@ class StudioCeController(http.Controller):
         target_view = request.env['ir.ui.view'].browse(view_id)
         if not target_view.exists():
             return {'error': 'Target view not found.'}
+
+        model_name = target_view.model
+        if field_name.startswith('x_studio_') and field_name not in request.env[model_name]._fields:
+            self._reload_registry(request.env, model_name)
 
         # Check if the field already exists in the compiled layout
         field_exists = False
@@ -1061,8 +1077,7 @@ class StudioCeController(http.Controller):
                 'is_studio_ce': True,
             })
             # Setup & init registry
-            request.env.registry.setup_models(request.cr)
-            request.env.registry.init_models(request.cr, [model_name], request.context)
+            self._reload_registry(request.env, model_name)
 
         vals = {
             'name': name,

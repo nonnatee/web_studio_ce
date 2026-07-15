@@ -53,8 +53,13 @@ class StudioCeLog(models.Model):
             
             self.field_id.unlink()
             # Trigger registry reload
-            self.env.registry.setup_models(self._cr)
-            self.env.registry.init_models(self._cr, [model_name], self._context)
+            self.env.flush_all()
+            if hasattr(self.env.registry, '_setup_models__'):
+                self.env.registry._setup_models__(self._cr)
+            elif hasattr(self.env.registry, 'setup_models'):
+                self.env.registry.setup_models(self._cr)
+            if hasattr(self.env.registry, 'init_models'):
+                self.env.registry.init_models(self._cr, [model_name], self._context)
             
         elif self.log_type in ['view_modify', 'property_override'] and self.view_id and self.xpath_expr:
             # Surgically remove this specific xpath modification from the inherited studio view
