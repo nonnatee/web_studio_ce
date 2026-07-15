@@ -74,6 +74,48 @@
                 </main>
             </div>
 
+            <!-- New Field Creation Modal -->
+            <div t-if="state.showFieldCreateModal" class="modal fade show d-block bg-dark bg-opacity-50" tabindex="-1" role="dialog" style="z-index: 1070;">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content shadow-lg border-primary">
+                        <div class="modal-header bg-primary text-white py-3">
+                            <h5 class="modal-title fw-bold">✨ Create New Field</h5>
+                            <button type="button" class="btn-close btn-close-white" t-on-click="closeFieldCreateModal"></button>
+                        </div>
+                        <div class="modal-body py-4">
+                            <div class="mb-3">
+                                <label class="form-label text-secondary small fw-bold">Field Label</label>
+                                <input type="text" class="form-control form-control-sm" placeholder="e.g. My Custom Text" 
+                                       t-model="state.fieldCreateLabel"
+                                       t-on-input="onFieldCreateLabelInput"/>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label text-secondary small fw-bold">Technical Name</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text font-monospace bg-light" style="font-size: 0.85rem;">x_studio_</span>
+                                    <input type="text" class="form-control font-monospace" placeholder="my_custom_text" 
+                                           t-model="state.fieldCreateTechnicalName"
+                                           t-on-input="onFieldCreateTechnicalNameInput"
+                                           style="font-size: 0.85rem;"/>
+                                </div>
+                                <div class="form-text text-muted small mt-1" style="font-size: 0.72rem;">
+                                    Full database name: <span class="font-monospace">x_studio_<t t-esc="state.fieldCreateTechnicalName || ''"/></span>
+                                </div>
+                            </div>
+                            
+                            <div t-if="state.fieldCreateError" class="alert alert-danger py-2 small mb-0 mt-3" style="font-size: 0.75rem;">
+                                ⚠️ <t t-esc="state.fieldCreateError"/>
+                            </div>
+                        </div>
+                        <div class="modal-footer bg-light py-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" t-on-click="closeFieldCreateModal">Cancel</button>
+                            <button type="button" class="btn btn-sm btn-primary px-3" t-on-click="submitFieldCreate">Create Field</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Documentation Panel Overlay -->
             <StudioCeDocsPanel t-if="state.showDocs" onClose.bind="closeDocs"/>
 

@@ -29,6 +29,14 @@ export class StudioCeEditor extends Component {
             showDocs: false,
             showAppCreator: false,
             selectedField: null,
+            showFieldCreateModal: false,
+            fieldCreateType: "char",
+            fieldCreateLabel: "",
+            fieldCreateTechnicalName: "",
+            fieldCreateTargetField: null,
+            fieldCreatePosition: "inside",
+            fieldCreateIsCustomName: false,
+            fieldCreateError: "",
         });
 
         onWillStart(async () => {
@@ -114,8 +122,7 @@ export class StudioCeEditor extends Component {
         }
     }
 
-    async insertNewFieldIntoView(fieldType, targetFieldName, position, groupName, pageName) {
-        const fieldName = `x_studio_field_${Date.now().toString().slice(-4)}`;
+    async insertNewFieldIntoView(fieldType, targetFieldName, position) {
         const labelMap = {
             char: 'New Text',
             integer: 'New Integer',
@@ -125,52 +132,116 @@ export class StudioCeEditor extends Component {
             datetime: 'New Datetime',
             boolean: 'New Checkbox',
             selection: 'New Selection',
-            many2one: 'New Many2one',
-            many2many: 'New Many2many',
+            many2one: 'New Relation',
+            many2many: 'New Relation Tags',
             binary: 'New Binary',
             html: 'New HTML',
         };
-        const label = labelMap[fieldType] || 'New Field';
-        
+        const defaultLabel = labelMap[fieldType] || 'New Field';
+
+        this.state.fieldCreateType = fieldType;
+        this.state.fieldCreateLabel = defaultLabel;
+        this.state.fieldCreateTechnicalName = this.sanitizeTechnicalName(defaultLabel);
+        this.state.fieldCreateTargetField = targetFieldName;
+        this.state.fieldCreatePosition = position;
+        this.state.fieldCreateIsCustomName = false;
+        this.state.fieldCreateError = "";
+        this.state.showFieldCreateModal = true;
+    }
+
+    sanitizeTechnicalName(val) {
+        return (val || "")
+            .toLowerCase()
+            .replace(/[^a-z0-9_]/g, "_")
+            .replace(/_+/g, "_")
+            .replace(/^_+|_+$/g, "");
+    }
+
+    onFieldCreateLabelInput(ev) {
+        this.state.fieldCreateLabel = ev.target.value;
+        if (!this.state.fieldCreateIsCustomName) {
+            this.state.fieldCreateTechnicalName = this.sanitizeTechnicalName(ev.target.value);
+        }
+    }
+
+    onFieldCreateTechnicalNameInput(ev) {
+        this.state.fieldCreateIsCustomName = true;
+        this.state.fieldCreateTechnicalName = this.sanitizeTechnicalName(ev.target.value);
+    }
+
+    closeFieldCreateModal() {
+        this.state.showFieldCreateModal = false;
+        this.state.fieldCreateError = "";
+    }
+
+    async submitFieldCreate() {
+        const label = this.state.fieldCreateLabel.trim();
+        const techNameInput = this.state.fieldCreateTechnicalName.trim();
+        if (!label) {
+            this.state.fieldCreateError = "Field Label cannot be empty.";
+            return;
+        }
+        if (!techNameInput) {
+            this.state.fieldCreateError = "Technical Name cannot be empty.";
+            return;
+        }
+        const fullFieldName = "x_studio_" + techNameInput;
+
+        const existing = this.state.fields.find(f => f.name === fullFieldName);
+        if (existing) {
+            this.state.fieldCreateError = `Field '${fullFieldName}' already exists on this model.`;
+            return;
+        }
+
         this.state.loading = true;
+        this.state.fieldCreateError = "";
         try {
-            // 1. Create the field
+            // 1. Create field in database
             const result = await this.rpc("/web_studio_ce/add_field", {
                 model_name: this.state.model,
-                field_name: fieldName,
+                field_name: fullFieldName,
                 field_label: label,
-                field_type: fieldType,
+                field_type: this.state.fieldCreateType,
             });
-            
+
             if (result.error) {
-                console.error("Failed to add field", result.error);
+                this.state.fieldCreateError = result.error;
+                this.state.loading = false;
                 return;
             }
-            
+
             // 2. Insert field into view
-            if (!this.state.views || this.state.views.length === 0) return;
+            if (!this.state.views || this.state.views.length === 0) {
+                this.closeFieldCreateModal();
+                return;
+            }
             const viewId = this.state.viewId || this.state.views[0].id;
-            
+
             const res = await this.rpc("/web_studio_ce/insert_field_into_view", {
                 view_id: viewId,
-                field_name: fieldName,
-                target_field_name: targetFieldName,
-                position: position,
-                group_name: groupName,
-                page_name: pageName,
+                field_name: fullFieldName,
+                target_field_name: this.state.fieldCreateTargetField,
+                position: this.state.fieldCreatePosition,
             });
-            
-            if (!res.error) {
-                await this.loadStudioContext();
-                // 3. Auto-select the newly created field and open properties
-                const newField = this.state.fields.find(f => f.name === fieldName);
-                if (newField) {
-                    this.state.selectedField = newField;
-                    this.state.activeTab = "fields";
-                }
+
+            if (res.error) {
+                this.state.fieldCreateError = res.error;
+                this.state.loading = false;
+                return;
+            }
+
+            await this.loadStudioContext();
+            this.closeFieldCreateModal();
+
+            // Auto-select the newly created field and open properties
+            const newField = this.state.fields.find(f => f.name === fullFieldName);
+            if (newField) {
+                this.state.selectedField = newField;
+                this.state.activeTab = "fields";
             }
         } catch (error) {
-            console.error("Failed to insert new field", error);
+            console.error("Failed to create field", error);
+            this.state.fieldCreateError = error.message || "Server Error occurred.";
         } finally {
             this.state.loading = false;
         }
@@ -301,23 +372,30 @@ export class StudioCeEditor extends Component {
     }
 
     async addCustomField(fieldType, label) {
-        const fieldName = `x_studio_field_${Date.now().toString().slice(-4)}`;
-        this.state.loading = true;
-        try {
-            const result = await this.rpc("/web_studio_ce/add_field", {
-                model_name: this.state.model,
-                field_name: fieldName,
-                field_label: label,
-                field_type: fieldType,
-            });
-            if (!result.error) {
-                await this.loadStudioContext();
-            }
-        } catch (error) {
-            console.error("Failed to add custom field", error);
-        } finally {
-            this.state.loading = false;
-        }
+        const labelMap = {
+            char: 'New Text',
+            integer: 'New Integer',
+            float: 'New Float',
+            monetary: 'New Monetary',
+            date: 'New Date',
+            datetime: 'New Datetime',
+            boolean: 'New Checkbox',
+            selection: 'New Selection',
+            many2one: 'New Relation',
+            many2many: 'New Relation Tags',
+            binary: 'New Binary',
+            html: 'New HTML',
+        };
+        const defaultLabel = labelMap[fieldType] || label || 'New Field';
+
+        this.state.fieldCreateType = fieldType;
+        this.state.fieldCreateLabel = defaultLabel;
+        this.state.fieldCreateTechnicalName = this.sanitizeTechnicalName(defaultLabel);
+        this.state.fieldCreateTargetField = null;
+        this.state.fieldCreatePosition = "inside";
+        this.state.fieldCreateIsCustomName = false;
+        this.state.fieldCreateError = "";
+        this.state.showFieldCreateModal = true;
     }
 
     async addFieldToView(viewId, fieldName) {
