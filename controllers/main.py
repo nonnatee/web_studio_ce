@@ -236,12 +236,12 @@ class StudioCeController(http.Controller):
                 'arch': arch_xml
             })
         else:
-            # Append modifications to the existing inherited view arch
+            # Append modifications or mutate existing view arch in-place
             try:
                 parser = etree.XMLParser(remove_blank_text=True)
                 root = etree.fromstring(studio_view.arch, parser=parser)
                 
-                # Wrap inside a dummy parent to parse multiple adjacent tags, unless it's already wrapped in <data>
+                # Parse the incoming modification_xml (wrapped in <data> to allow multiple tags)
                 stripped_xml = modification_xml.strip()
                 if stripped_xml.startswith('<data>'):
                     new_elements = etree.fromstring(stripped_xml, parser=parser)
@@ -249,10 +249,63 @@ class StudioCeController(http.Controller):
                     wrapped_xml = f"<data>{modification_xml}</data>"
                     new_elements = etree.fromstring(wrapped_xml, parser=parser)
                 
-                for element in new_elements:
-                    root.append(element)
+                for xpath_elem in new_elements:
+                    if xpath_elem.tag != 'xpath':
+                        root.append(xpath_elem)
+                        continue
+                    
+                    expr = xpath_elem.get('expr')
+                    position = xpath_elem.get('position')
+                    
+                    # Try to locate the target node inside our own studio view arch
+                    target_node = None
+                    if expr:
+                        try:
+                            # Evaluate xpath expr inside the root tree
+                            nodes = root.xpath(expr)
+                            if nodes:
+                                target_node = nodes[0]
+                        except Exception:
+                            pass
+                    
+                    if target_node is not None:
+                        # Mutate target_node in-place!
+                        if position == 'inside':
+                            for child in xpath_elem:
+                                target_node.append(child)
+                        elif position == 'before':
+                            parent = target_node.getparent()
+                            if parent is not None:
+                                index = parent.index(target_node)
+                                for child in reversed(xpath_elem):
+                                    parent.insert(index, child)
+                        elif position == 'after':
+                            parent = target_node.getparent()
+                            if parent is not None:
+                                index = parent.index(target_node) + 1
+                                for child in reversed(xpath_elem):
+                                    parent.insert(index, child)
+                        elif position == 'replace':
+                            parent = target_node.getparent()
+                            if parent is not None:
+                                index = parent.index(target_node)
+                                for child in reversed(xpath_elem):
+                                    parent.insert(index, child)
+                                parent.remove(target_node)
+                        elif position == 'attributes':
+                            for child in xpath_elem:
+                                if child.tag == 'attribute':
+                                    name = child.get('name')
+                                    val = child.text or ''
+                                    target_node.set(name, val)
+                    else:
+                        # Fallback: target node is in base view, so append as new xpath tag
+                        root.append(xpath_elem)
+                
                 studio_view.arch = etree.tostring(root, encoding='utf-8', pretty_print=True).decode('utf-8')
             except Exception as e:
+                import logging
+                logging.getLogger(__name__).exception("Failed to merge studio arch modification")
                 return {'error': f'XML Parsing Error: {str(e)}'}
 
         # Log change
