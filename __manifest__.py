@@ -24,6 +24,7 @@ It enables dynamic modification of fields, views, PDF report templates, automate
         'web.assets_backend': [
             '/web_studio_ce/static/src/scss/studio_ce.scss',
             '/web_studio_ce/static/src/js/studio_ce_navbar_toggle.js',
+            '/web_studio_ce/static/src/js/studio_ce_patches.js',
             '/web_studio_ce/static/src/js/studio_ce_editor.js',
             '/web_studio_ce/static/src/js/studio_ce_sidebar.js',
             '/web_studio_ce/static/src/js/studio_ce_canvas.js',

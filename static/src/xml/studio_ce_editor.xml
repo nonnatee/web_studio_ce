@@ -42,7 +42,8 @@
                                  onApprovalReload.bind="loadStudioContext"
                                  onRevertLog.bind="revertLog"
                                  onOverrideProperty.bind="overrideViewFieldProperty"
-                                 onViewChange.bind="onViewChange"/>
+                                 onViewChange.bind="onViewChange"
+                                 onSelectReport.bind="onSelectReport"/>
 
                 <!-- Central Canvas Overlay -->
                 <main class="flex-grow-1 bg-light p-4 overflow-auto position-relative">
@@ -55,8 +56,12 @@
                     <t t-if="state.activeTab === 'security'">
                         <SecurityEditor model="state.model"/>
                     </t>
+                    <t t-elif="state.activeTab === 'reports'">
+                        <ReportEditor model="state.model" report="state.selectedReport" onBack.bind="onBackToReports"/>
+                    </t>
                     <t t-else="">
                         <StudioCeCanvas onRegister.bind="onRegisterCanvas"
+                                         model="state.model"
                                          view="state.views.find(v => v.id === state.viewId) || state.views[0]"
                                          views="state.views"
                                          fields="state.fields"

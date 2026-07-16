@@ -1,4 +1,171 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
-    <!-- Placeholder for Studio CE Report Editor -->
+    <t t-name="web_studio_ce.ReportEditor" owl="1">
+        <div class="o_studio_ce_report_editor d-flex flex-column h-100 bg-light p-0 position-relative" style="min-height: 450px;">
+            <!-- No Report Selected State -->
+            <div t-if="!props.report" class="flex-grow-1 d-flex flex-column justify-content-center align-items-center border-dashed rounded m-3 p-5">
+                <span class="fs-1 mb-3">📄</span>
+                <h5 class="fw-bold text-dark">No Report Selected</h5>
+                <p class="text-muted text-center max-w-sm">Please select a report template from the sidebar reports list to start customizing its layout.</p>
+            </div>
+
+            <!-- Report Editor Active Workspace -->
+            <div t-else="" class="flex-grow-1 d-flex flex-row overflow-hidden gap-3 p-3">
+                <!-- Left Pane: HTML Report Preview -->
+                <div class="flex-grow-1 bg-white border rounded shadow-sm d-flex flex-column overflow-hidden" style="flex: 2;">
+                    <div class="bg-light border-bottom p-2 d-flex justify-content-between align-items-center flex-shrink-0">
+                        <span class="fw-bold text-secondary small">📄 Live Report Preview</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-xs btn-outline-secondary" t-on-click="refreshPreview">🔄 Refresh</button>
+                            <button class="btn btn-xs btn-outline-danger" t-on-click="() => props.onBack()">✕ Close Report</button>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 overflow-auto bg-dark bg-opacity-10 p-3 d-flex justify-content-center">
+                        <iframe t-ref="previewIframe" 
+                                t-att-src="reportPreviewUrl"
+                                class="border shadow bg-white"
+                                style="width: 100%; max-width: 800px; height: 100%; min-height: 500px;"
+                                t-on-load="onIframeLoaded"/>
+                    </div>
+                </div>
+
+                <!-- Right Pane: XML Explorer & CSS Property Editor -->
+                <div class="bg-white border rounded shadow-sm d-flex flex-column overflow-hidden" style="width: 380px; flex: 1;">
+                    <div class="bg-primary text-white p-3 flex-shrink-0">
+                        <h6 class="fw-bold mb-0">🛠️ QWeb Element Editor</h6>
+                    </div>
+                    
+                    <!-- Element Selector Tabs -->
+                    <ul class="nav nav-tabs nav-fill flex-shrink-0 border-bottom">
+                        <li class="nav-item">
+                            <button class="nav-link py-2" t-att-class="state.activeEditorTab === 'tree' ? 'active fw-bold' : ''" t-on-click="() => this.state.activeEditorTab = 'tree'">QWeb Tree</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link py-2" t-att-class="state.activeEditorTab === 'properties' ? 'active fw-bold' : ''" t-on-click="() => this.state.activeEditorTab = 'properties'">Properties</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content p-3 flex-grow-1 overflow-auto">
+                        <!-- QWeb XML Tree Explorer -->
+                        <div t-if="state.activeEditorTab === 'tree'" class="tab-pane show active">
+                            <div class="tree-explorer font-monospace small" style="font-size: 0.8rem;">
+                                <t t-foreach="state.parsedTree" t-as="node" t-key="node.id || node_index">
+                                    <t t-call="web_studio_ce.QWebNode">
+                                        <t t-set="n" t-value="node"/>
+                                    </t>
+                                </t>
+                            </div>
+                        </div>
+
+                        <!-- CSS Styles & Content Editor -->
+                        <div t-if="state.activeEditorTab === 'properties'" class="tab-pane show active">
+                            <t t-if="state.selectedNode">
+                                <div class="mb-3">
+                                    <label class="form-label text-secondary small fw-bold">XML Tag</label>
+                                    <input type="text" class="form-control form-control-sm bg-light font-monospace" t-att-value="state.selectedNode.tag" readonly="1"/>
+                                </div>
+
+                                <!-- Text Value editing -->
+                                <div class="mb-3" t-if="isTextNode(state.selectedNode)">
+                                    <label class="form-label text-secondary small fw-bold">Text Value</label>
+                                    <textarea class="form-control form-control-sm" rows="3" 
+                                              t-att-value="state.selectedNode.text"
+                                              t-on-change="onTextNodeChange"/>
+                                </div>
+
+                                <!-- Style: Margin/Padding -->
+                                <div class="mb-3 border-top pt-2">
+                                    <h6 class="text-secondary small fw-bold mb-2">Spacing &amp; Sizing</h6>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="form-label text-muted small" style="font-size: 0.72rem;">Margin (px)</label>
+                                            <input type="text" class="form-control form-control-sm" placeholder="e.g. 10px"
+                                                   t-att-value="getNodeStyle('margin')"
+                                                   t-on-change="(ev) => this.setNodeStyle('margin', ev.target.value)"/>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label text-muted small" style="font-size: 0.72rem;">Padding (px)</label>
+                                            <input type="text" class="form-control form-control-sm" placeholder="e.g. 8px"
+                                                   t-att-value="getNodeStyle('padding')"
+                                                   t-on-change="(ev) => this.setNodeStyle('padding', ev.target.value)"/>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Style: Color & Background -->
+                                <div class="mb-3 border-top pt-2">
+                                    <h6 class="text-secondary small fw-bold mb-2">Colors</h6>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <label class="form-label text-muted small" style="font-size: 0.72rem;">Text Color</label>
+                                            <input type="text" class="form-control form-control-sm" placeholder="e.g. #333"
+                                                   t-att-value="getNodeStyle('color')"
+                                                   t-on-change="(ev) => this.setNodeStyle('color', ev.target.value)"/>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label text-muted small" style="font-size: 0.72rem;">Background</label>
+                                            <input type="text" class="form-control form-control-sm" placeholder="e.g. #f8f9fa"
+                                                   t-att-value="getNodeStyle('background-color')"
+                                                   t-on-change="(ev) => this.setNodeStyle('background-color', ev.target.value)"/>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Custom attributes editing -->
+                                <div class="mb-3 border-top pt-2">
+                                    <h6 class="text-secondary small fw-bold mb-2">QWeb Attributes</h6>
+                                    <div class="mb-2">
+                                        <label class="form-label text-muted small" style="font-size: 0.72rem;">Field Binding (t-field)</label>
+                                        <input type="text" class="form-control form-control-sm font-monospace" placeholder="e.g. o.name"
+                                               t-att-value="state.selectedNode.attrs['t-field'] || ''"
+                                               t-on-change="(ev) => this.setNodeAttribute('t-field', ev.target.value)"/>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label text-muted small" style="font-size: 0.72rem;">Expression (t-esc)</label>
+                                        <input type="text" class="form-control form-control-sm font-monospace" placeholder="e.g. o.list_price"
+                                               t-att-value="state.selectedNode.attrs['t-esc'] || ''"
+                                               t-on-change="(ev) => this.setNodeAttribute('t-esc', ev.target.value)"/>
+                                    </div>
+                                </div>
+
+                                <button class="btn btn-sm btn-danger w-100 mt-3" t-on-click="deleteSelectedNode">🗑️ Delete Element</button>
+                            </t>
+                            <t t-else="">
+                                <div class="text-center text-muted py-5 small">
+                                    Click a QWeb node in the tree to edit its styling and values.
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+                    
+                    <div class="p-3 border-top bg-light flex-shrink-0 d-flex gap-2">
+                        <button class="btn btn-sm btn-primary flex-grow-1" t-on-click="saveReport">Save Report</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </t>
+
+    <!-- Recursive QWeb Node Tree Component -->
+    <t t-name="web_studio_ce.QWebNode" owl="1">
+        <div class="qweb-tree-node ms-2 my-1">
+            <div class="d-flex align-items-center gap-1 cursor-pointer py-1 px-2 rounded hover-bg-light"
+                 t-att-class="state.selectedNodeId === n.id ? 'bg-primary bg-opacity-10 border-start border-3 border-primary' : ''"
+                 t-on-click.stop="() => this.selectNode(n)">
+                <span t-if="n.children and n.children.length > 0" class="text-muted small">▼</span>
+                <span class="text-primary font-weight-bold">&lt;<t t-esc="n.tag"/>&gt;</span>
+                <span t-if="n.attrs['class']" class="text-warning small">.<t t-esc="n.attrs['class'].split(' ')[0]"/></span>
+                <span t-if="n.attrs['t-field']" class="text-info small">[<t t-esc="n.attrs['t-field']"/>]</span>
+                <span t-if="n.text" class="text-muted text-truncate ms-2" style="max-width: 150px; font-style: italic;"><t t-esc="n.text"/></span>
+            </div>
+            
+            <div t-if="n.children and n.children.length > 0" class="border-left pl-2 ms-2">
+                <t t-foreach="n.children" t-as="subnode" t-key="subnode.id || subnode_index">
+                    <t t-call="web_studio_ce.QWebNode">
+                        <t t-set="n" t-value="subnode"/>
+                    </t>
+                </t>
+            </div>
+        </div>
+    </t>
 </templates>

@@ -9,6 +9,7 @@ import { AppCreator } from "./app_creator";
 import { SecurityEditor } from "./security_editor";
 import { StudioCeSidebar } from "./studio_ce_sidebar";
 import { StudioCeCanvas } from "./studio_ce_canvas";
+import { ReportEditor } from "./report_editor";
 
 export class StudioCeEditor extends Component {
     setup() {
@@ -37,6 +38,7 @@ export class StudioCeEditor extends Component {
             fieldCreatePosition: "inside",
             fieldCreateIsCustomName: false,
             fieldCreateError: "",
+            selectedReport: null,
         });
 
         onWillStart(async () => {
@@ -438,6 +440,17 @@ export class StudioCeEditor extends Component {
 
     onTabChange(tab) {
         this.state.activeTab = tab;
+        if (tab !== 'reports') {
+            this.state.selectedReport = null;
+        }
+    }
+
+    onSelectReport(report) {
+        this.state.selectedReport = report;
+    }
+
+    onBackToReports() {
+        this.state.selectedReport = null;
     }
 
     onSelectField(field) {
@@ -537,5 +550,5 @@ export class StudioCeEditor extends Component {
 }
 
 StudioCeEditor.template = "web_studio_ce.StudioCeEditor";
-StudioCeEditor.components = { StudioCeDocsPanel, AppCreator, SecurityEditor, StudioCeSidebar, StudioCeCanvas };
+StudioCeEditor.components = { StudioCeDocsPanel, AppCreator, SecurityEditor, StudioCeSidebar, StudioCeCanvas, ReportEditor };
 registry.category("actions").add("web_studio_ce.editor_action", StudioCeEditor);

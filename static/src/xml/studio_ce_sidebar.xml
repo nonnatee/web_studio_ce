@@ -11,6 +11,9 @@
                     <button class="nav-link py-2" t-att-class="{ active: props.activeTab === 'views' }" t-on-click="() => props.onTabChange('views')">Views</button>
                 </li>
                 <li class="nav-item">
+                    <button class="nav-link py-2" t-att-class="{ active: props.activeTab === 'reports' }" t-on-click="() => props.onTabChange('reports')">Reports</button>
+                </li>
+                <li class="nav-item">
                     <button class="nav-link py-2" t-att-class="{ active: props.activeTab === 'automations' }" t-on-click="() => props.onTabChange('automations')">Rules</button>
                 </li>
                 <li class="nav-item">
@@ -323,6 +326,27 @@
                         </t>
                         <div t-if="props.logs.length === 0" class="text-center text-muted py-5 small">
                             <p class="mb-0">No customisations logged for this model yet.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. Reports Tab -->
+                <div t-if="props.activeTab === 'reports'" class="tab-pane show active">
+                    <h5 class="fw-bold mb-3">Model Reports</h5>
+                    <button class="btn btn-primary btn-sm w-100 mb-3" t-on-click="createNewReport">
+                        Create Report
+                    </button>
+                    <div class="list-group list-group-flush border rounded overflow-auto" style="max-height: 350px;">
+                        <t t-foreach="state.reports || []" t-as="rep" t-key="rep.id">
+                            <div class="list-group-item list-group-item-action py-2 px-3 cursor-pointer"
+                                 t-att-class="state.selectedReportId === rep.id ? 'bg-primary bg-opacity-10 fw-bold' : ''"
+                                 t-on-click="() => this.selectReport(rep)">
+                                <div class="fw-bold text-dark small"><t t-esc="rep.name"/></div>
+                                <div class="text-muted font-monospace" style="font-size:0.7rem;"><t t-esc="rep.report_name"/></div>
+                            </div>
+                        </t>
+                        <div t-if="!state.reports or state.reports.length === 0" class="text-center text-muted py-5 small">
+                            No reports configured for this model.
                         </div>
                     </div>
                 </div>

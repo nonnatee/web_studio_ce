@@ -373,3 +373,82 @@
         box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
     }
 }
+
+/* Studio CE Interactive Design Mode Outlines & Badges */
+.o_studio_ce_design_mode {
+    position: relative;
+    user-select: none;
+
+    // Hover styles
+    .o_studio_ce_hover {
+        outline: 2px dashed #007bff !important;
+        outline-offset: -2px;
+        transition: outline 0.15s ease-in-out;
+        
+        &.o_group, &.o_inner_group {
+            outline-color: #6f42c1 !important; // purple
+        }
+        
+        &.tab-pane, &.nav-link {
+            outline-color: #fd7e14 !important; // amber
+        }
+    }
+
+    // Selected styles
+    .o_studio_ce_selected {
+        outline: 2px solid #007bff !important;
+        outline-offset: -2px;
+        position: relative;
+        background-color: rgba(0, 123, 255, 0.05) !important;
+
+        &.o_group, &.o_inner_group {
+            outline-color: #6f42c1 !important;
+            background-color: rgba(111, 66, 193, 0.05) !important;
+        }
+
+        &.tab-pane, &.nav-link {
+            outline-color: #fd7e14 !important;
+            background-color: rgba(253, 126, 20, 0.05) !important;
+        }
+
+        // Floating badge for selected element
+        &::after {
+            content: attr(name) " (" attr(type) ")";
+            position: absolute;
+            top: -20px;
+            left: 2px;
+            background-color: #007bff;
+            color: white;
+            font-size: 0.7rem;
+            font-family: monospace;
+            padding: 1px 6px;
+            border-radius: 3px;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        &.o_group::after, &.o_inner_group::after {
+            background-color: #6f42c1;
+            content: "Group (" attr(name) ")";
+        }
+
+        &.tab-pane::after, &.nav-link::after {
+            background-color: #fd7e14;
+            content: "Page (" attr(name) ")";
+        }
+    }
+
+    // Drag-over styling
+    .o_studio_ce_drag_over {
+        border: 2px dashed #28a745 !important;
+        background-color: rgba(40, 167, 69, 0.08) !important;
+    }
+
+    // List header custom drag-over
+    th.o_studio_ce_drag_over {
+        border-left: 4px solid #28a745 !important;
+        background-color: rgba(40, 167, 69, 0.1) !important;
+    }
+}

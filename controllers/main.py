@@ -676,6 +676,42 @@ class StudioCeController(http.Controller):
         view.arch = arch
         return {'status': 'success'}
 
+    @http.route('/web_studio_ce/create_report', type='json', auth='user')
+    def create_report(self, model_name, name):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        import time
+        suffix = int(time.time())
+        xml_id = f"web_studio_ce.report_custom_layout_{suffix}"
+        
+        view_vals = {
+            'name': f"Report Custom Layout {suffix}",
+            'type': 'qweb',
+            'model': model_name,
+            'arch': f"""<t t-name="{xml_id}">
+                <div class="page">
+                    <h2>Customized {model_name} Report</h2>
+                    <p>This is a new custom report template created via Studio CE.</p>
+                </div>
+            </t>""",
+            'key': xml_id,
+            'is_studio_ce': True,
+        }
+        view = request.env['ir.ui.view'].create(view_vals)
+        
+        report_vals = {
+            'name': name,
+            'model': model_name,
+            'report_type': 'qweb-html',
+            'report_name': xml_id,
+            'binding_model_id': request.env['ir.model'].search([('model', '=', model_name)], limit=1).id,
+            'is_studio_ce': True,
+        }
+        report = request.env['ir.actions.report'].create(report_vals)
+
+        return {'id': report.id, 'name': report.name, 'report_name': report.report_name}
+
     @http.route('/web_studio_ce/get_menu_tree', type='json', auth='user')
     def get_menu_tree(self):
         if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
@@ -1216,8 +1252,16 @@ class StudioCeController(http.Controller):
             ('inherit_id', '=', False)
         ], limit=1)
         if form_view:
-            # Check if header is already in the compiled arch
-            arch_str = form_view._get_combined_arch()
+            arch_str = ""
+            try:
+                if hasattr(form_view, 'get_combined_arch'):
+                    arch_str = form_view.get_combined_arch()
+                else:
+                    arch_tree = form_view._get_combined_arch()
+                    arch_str = etree.tostring(arch_tree, encoding='unicode')
+            except Exception:
+                arch_str = form_view.arch or ""
+
             has_header = '<header>' in arch_str or '<header ' in arch_str
 
             buttons_xml = f"""

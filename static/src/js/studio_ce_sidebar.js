@@ -1,9 +1,10 @@
 /** @odoo-module **/
 
-import { Component, useState } from "@odoo/owl";
+import { Component, useState, onWillStart, onWillUpdateProps } from "@odoo/owl";
 import { AutomationEditor } from "./automation_editor";
 import { PropertiesBuilder } from "./properties_builder";
 import { ApprovalEditor } from "./approval_editor";
+import { rpc } from "@web/core/network/rpc";
 
 export class StudioCeSidebar extends Component {
     setup() {
@@ -14,6 +15,18 @@ export class StudioCeSidebar extends Component {
             selectedApproval: null,
             searchQuery: "",
             activeFilter: "all",
+            reports: [],
+            selectedReportId: null,
+        });
+
+        onWillStart(async () => {
+            await this.loadReports();
+        });
+
+        onWillUpdateProps(async (nextProps) => {
+            if (nextProps.modelName !== this.props.modelName) {
+                await this.loadReports(nextProps.modelName);
+            }
         });
     }
 
@@ -128,6 +141,38 @@ export class StudioCeSidebar extends Component {
             this.state.selectedApproval = updated;
         }
     }
+
+    async loadReports(model = this.props.modelName) {
+        try {
+            const data = await rpc("/web_studio_ce/get_reports", { model_name: model });
+            if (data && !data.error) {
+                this.state.reports = data.reports;
+            }
+        } catch (error) {
+            console.error("Failed to load reports", error);
+        }
+    }
+
+    selectReport(rep) {
+        this.state.selectedReportId = rep.id;
+        if (this.props.onSelectReport) {
+            this.props.onSelectReport(rep);
+        }
+    }
+
+    async createNewReport() {
+        try {
+            const res = await rpc("/web_studio_ce/create_report", {
+                model_name: this.props.modelName,
+                name: "New Report",
+            });
+            if (!res.error) {
+                await this.loadReports();
+            }
+        } catch (error) {
+            console.error("Failed to create report", error);
+        }
+    }
 }
 
 StudioCeSidebar.template = "web_studio_ce.StudioCeSidebar";
@@ -155,4 +200,5 @@ StudioCeSidebar.props = {
     onRevertLog: Function,
     onViewChange: Function,
     modelName: String,
+    onSelectReport: { type: Function, optional: true },
 };
