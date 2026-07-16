@@ -43,6 +43,7 @@
                                  onRevertLog.bind="revertLog"
                                  onOverrideProperty.bind="overrideViewFieldProperty"
                                  onViewChange.bind="onViewChange"
+                                 onDeleteNode.bind="deleteNodeInView"
                                  onSelectReport.bind="onSelectReport"/>
 
                 <!-- Central Canvas Overlay -->

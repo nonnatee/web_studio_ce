@@ -51,6 +51,7 @@
                                 <input type="text" class="form-control form-control-sm bg-light" readonly="1"
                                        t-att-value="props.selectedField.name"/>
                             </div>
+                            <button class="btn btn-sm btn-danger w-100 mt-2" t-on-click="removeFieldFromView">🗑️ Remove Group</button>
                         </t>
                         <t t-else="">
                             <!-- Properties Inputs (Per-View Overrides) -->
@@ -168,8 +169,8 @@
                                     <input type="text" class="form-control" placeholder="Key" t-model="state.newOptionKey"/>
                                     <input type="text" class="form-control" placeholder="Label" t-model="state.newOptionValue"/>
                                     <button class="btn btn-primary" t-on-click="addSelectionOption">+</button>
-                                </div>
                             </div>
+                            <button class="btn btn-sm btn-danger w-100 mt-3" t-on-click="removeFieldFromView">🗑️ Remove Field</button>
                         </t>
                     </t>
 

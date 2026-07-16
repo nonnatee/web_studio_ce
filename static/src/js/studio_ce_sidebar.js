@@ -173,6 +173,22 @@ export class StudioCeSidebar extends Component {
             console.error("Failed to create report", error);
         }
     }
+
+    removeFieldFromView() {
+        const field = this.props.selectedField;
+        if (!field) return;
+        if (confirm(`Are you sure you want to remove this ${field.ttype === 'group' ? 'group' : 'field'} from the view?`)) {
+            let xpath = "";
+            if (field.ttype === "group" || field.ttype === "page" || field.name.startsWith("//")) {
+                xpath = field.name;
+            } else {
+                xpath = `//field[@name='${field.name}']`;
+            }
+            if (xpath && this.props.onDeleteNode) {
+                this.props.onDeleteNode(xpath);
+            }
+        }
+    }
 }
 
 StudioCeSidebar.template = "web_studio_ce.StudioCeSidebar";
@@ -201,4 +217,5 @@ StudioCeSidebar.props = {
     onViewChange: Function,
     modelName: String,
     onSelectReport: { type: Function, optional: true },
+    onDeleteNode: { type: Function, optional: true },
 };

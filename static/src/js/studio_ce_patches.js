@@ -5,7 +5,7 @@ import { registry } from "@web/core/registry";
 import { FormRenderer } from "@web/views/form/form_renderer";
 import { ListRenderer } from "@web/views/list/list_renderer";
 import { KanbanRenderer } from "@web/views/kanban/kanban_renderer";
-import { useEffect, onMounted, onPatched } from "@odoo/owl";
+import { useEffect, onMounted, onPatched, onWillDestroy } from "@odoo/owl";
 
 // 1. Patch View Service to dynamically inject edited arch
 const viewService = registry.category("services").get("view");
@@ -94,6 +94,10 @@ patch(FormRenderer.prototype, {
             onPatched(() => {
                 this.setupStudioInteractiveMode();
             });
+            onWillDestroy(() => {
+                const toolbar = this.el?.querySelector(".o_studio_ce_toolbar");
+                if (toolbar) toolbar.remove();
+            });
         }
     },
 
@@ -113,10 +117,11 @@ patch(FormRenderer.prototype, {
             }
         });
 
-        // Add Hover/Click listeners
+        // Add Hover/Click/DblClick listeners
         this.el.addEventListener("mouseover", this.onStudioMouseOver.bind(this), true);
         this.el.addEventListener("mouseout", this.onStudioMouseOut.bind(this), true);
         this.el.addEventListener("click", this.onStudioClick.bind(this), true);
+        this.el.addEventListener("dblclick", this.onStudioDblClick.bind(this), true);
 
         // Drag and drop listeners on root element
         this.el.addEventListener("dragover", this.onStudioDragOver.bind(this), true);
@@ -162,7 +167,11 @@ patch(FormRenderer.prototype, {
         if (!this.env.config || !this.env.config.studioMode) return;
 
         const target = ev.target.closest(".o_field_widget, .o_group, .o_inner_group, .tab-pane, .o_form_sheet");
-        if (!target) return;
+        if (!target) {
+            const toolbar = this.el.querySelector(".o_studio_ce_toolbar");
+            if (toolbar) toolbar.remove();
+            return;
+        }
 
         // Allow tab links and tab buttons to bubble up so OWL can switch tabs
         const isTab = ev.target.closest(".nav-link, .nav-item");
@@ -193,6 +202,122 @@ patch(FormRenderer.prototype, {
                 ttype: target.classList.contains("tab-pane") ? "page" : "group"
             });
         }
+
+        // Update floating action toolbar overlay
+        this.updateStudioToolbar(target);
+    },
+
+    onStudioDblClick(ev) {
+        if (!this.env.config || !this.env.config.studioMode) return;
+        
+        const labelEl = ev.target.closest(".o_form_label");
+        if (!labelEl) return;
+        
+        ev.preventDefault();
+        ev.stopPropagation();
+        
+        const forAttr = labelEl.getAttribute("for");
+        let fieldName = forAttr;
+        if (!fieldName) {
+            const siblingField = labelEl.nextElementSibling?.closest(".o_field_widget") || 
+                                 labelEl.parentElement?.querySelector(".o_field_widget");
+            fieldName = siblingField?.getAttribute("name");
+        }
+        
+        if (!fieldName) return;
+        
+        this.makeLabelInlineEditable(labelEl, fieldName);
+    },
+
+    makeLabelInlineEditable(labelEl, fieldName) {
+        if (labelEl.querySelector(".o_studio_ce_inline_input")) return;
+        
+        const originalText = labelEl.textContent.trim();
+        
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "form-control form-control-sm o_studio_ce_inline_input d-inline-block w-auto py-0 px-1";
+        input.value = originalText;
+        input.style.minWidth = "80px";
+        input.style.fontSize = "inherit";
+        input.style.fontWeight = "inherit";
+        input.style.height = "auto";
+        
+        labelEl.innerHTML = "";
+        labelEl.appendChild(input);
+        input.focus();
+        input.select();
+        
+        const saveEdit = async () => {
+            const val = input.value.trim();
+            if (val && val !== originalText) {
+                labelEl.textContent = val;
+                await this.env.config.onOverrideProperty?.(fieldName, "label", val);
+            } else {
+                labelEl.textContent = originalText;
+            }
+        };
+        
+        input.addEventListener("keydown", async (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                input.blur();
+            } else if (e.key === "Escape") {
+                e.preventDefault();
+                labelEl.textContent = originalText;
+            }
+        });
+        
+        input.addEventListener("blur", async () => {
+            await saveEdit();
+        });
+    },
+
+    updateStudioToolbar(target) {
+        let oldToolbar = this.el.querySelector(".o_studio_ce_toolbar");
+        if (oldToolbar) oldToolbar.remove();
+        
+        if (!target) return;
+
+        const xpath = getElementXPath(target, this.props.record?.resModel);
+        if (!xpath) return;
+
+        const toolbar = document.createElement("div");
+        toolbar.className = "o_studio_ce_toolbar position-absolute d-flex align-items-center gap-1 bg-primary text-white px-2 py-1 rounded shadow-sm";
+        toolbar.style.pointerEvents = "auto";
+        toolbar.style.zIndex = "1050";
+        toolbar.style.fontSize = "0.75rem";
+        
+        const targetRect = target.getBoundingClientRect();
+        const rootRect = this.el.getBoundingClientRect();
+        
+        const top = targetRect.top - rootRect.top - 28;
+        const left = targetRect.left - rootRect.left;
+        toolbar.style.top = `${top}px`;
+        toolbar.style.left = `${left}px`;
+
+        let label = "Element";
+        if (target.classList.contains("o_field_widget")) {
+            label = `Field: ${target.getAttribute("name")}`;
+        } else if (target.classList.contains("o_group") || target.classList.contains("o_inner_group")) {
+            label = "Group";
+        }
+        
+        toolbar.innerHTML = `
+            <span class="fw-bold">${label}</span>
+            <button class="btn btn-xs text-white p-0 ms-2 border-0 bg-transparent btn-studio-delete" title="Delete" style="font-size: 0.8rem; line-height: 1;">🗑️</button>
+        `;
+
+        toolbar.querySelector(".btn-studio-delete").addEventListener("click", async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (confirm(`Are you sure you want to remove this ${label} from the view?`)) {
+                await this.env.config.onDeleteNode?.(xpath);
+                toolbar.remove();
+            }
+        });
+
+        this.el.appendChild(toolbar);
     },
 
     onStudioDragOver(ev) {
@@ -257,6 +382,10 @@ patch(ListRenderer.prototype, {
             onPatched(() => {
                 this.setupStudioInteractiveList();
             });
+            onWillDestroy(() => {
+                const toolbar = this.el?.querySelector(".o_studio_ce_toolbar");
+                if (toolbar) toolbar.remove();
+            });
         }
     },
 
@@ -273,11 +402,26 @@ patch(ListRenderer.prototype, {
                 if (!this.env.config || !this.env.config.studioMode) return;
                 ev.preventDefault();
                 ev.stopPropagation();
+                
                 const name = th.getAttribute("data-name");
                 const fieldsList = this.env.config.fields || [];
                 const field = fieldsList.find(f => f.name === name);
                 if (field) {
                     this.env.config.onSelectField?.(field);
+                }
+                
+                this.updateStudioToolbar(th);
+            }, true);
+
+            // Double click to rename
+            th.addEventListener("dblclick", (ev) => {
+                if (!this.env.config || !this.env.config.studioMode) return;
+                ev.preventDefault();
+                ev.stopPropagation();
+                const name = th.getAttribute("data-name");
+                if (name) {
+                    const span = th.querySelector("span") || th;
+                    this.makeLabelInlineEditable(span, name);
                 }
             }, true);
 
@@ -327,6 +471,95 @@ patch(ListRenderer.prototype, {
                 }
             });
         });
+    },
+
+    makeLabelInlineEditable(labelEl, fieldName) {
+        if (labelEl.querySelector(".o_studio_ce_inline_input")) return;
+        
+        const originalText = labelEl.textContent.trim();
+        
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "form-control form-control-sm o_studio_ce_inline_input d-inline-block w-auto py-0 px-1";
+        input.value = originalText;
+        input.style.minWidth = "80px";
+        input.style.fontSize = "inherit";
+        input.style.fontWeight = "inherit";
+        input.style.height = "auto";
+        
+        labelEl.innerHTML = "";
+        labelEl.appendChild(input);
+        input.focus();
+        input.select();
+        
+        const saveEdit = async () => {
+            const val = input.value.trim();
+            if (val && val !== originalText) {
+                labelEl.textContent = val;
+                await this.env.config.onOverrideProperty?.(fieldName, "label", val);
+            } else {
+                labelEl.textContent = originalText;
+            }
+        };
+        
+        input.addEventListener("keydown", async (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                input.blur();
+            } else if (e.key === "Escape") {
+                e.preventDefault();
+                labelEl.textContent = originalText;
+            }
+        });
+        
+        input.addEventListener("blur", async () => {
+            await saveEdit();
+        });
+    },
+
+    updateStudioToolbar(target) {
+        let oldToolbar = this.el.querySelector(".o_studio_ce_toolbar");
+        if (oldToolbar) oldToolbar.remove();
+        
+        if (!target) return;
+
+        const xpath = getElementXPath(target, this.props.record?.resModel);
+        if (!xpath) return;
+
+        const toolbar = document.createElement("div");
+        toolbar.className = "o_studio_ce_toolbar position-absolute d-flex align-items-center gap-1 bg-primary text-white px-2 py-1 rounded shadow-sm";
+        toolbar.style.pointerEvents = "auto";
+        toolbar.style.zIndex = "1050";
+        toolbar.style.fontSize = "0.75rem";
+        
+        const targetRect = target.getBoundingClientRect();
+        const rootRect = this.el.getBoundingClientRect();
+        
+        const top = targetRect.top - rootRect.top - 28;
+        const left = targetRect.left - rootRect.left;
+        toolbar.style.top = `${top}px`;
+        toolbar.style.left = `${left}px`;
+
+        let label = "Column";
+        if (target.closest("th")) {
+            label = `Column: ${target.closest("th").getAttribute("data-name")}`;
+        }
+        
+        toolbar.innerHTML = `
+            <span class="fw-bold">${label}</span>
+            <button class="btn btn-xs text-white p-0 ms-2 border-0 bg-transparent btn-studio-delete" title="Delete" style="font-size: 0.8rem; line-height: 1;">🗑️</button>
+        `;
+
+        toolbar.querySelector(".btn-studio-delete").addEventListener("click", async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (confirm(`Are you sure you want to remove this ${label} from the view?`)) {
+                await this.env.config.onDeleteNode?.(xpath);
+                toolbar.remove();
+            }
+        });
+
+        this.el.appendChild(toolbar);
     }
 });
 
