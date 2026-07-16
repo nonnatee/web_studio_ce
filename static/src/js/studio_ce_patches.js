@@ -16,7 +16,7 @@ if (viewService) {
             const originalLoadViews = api.loadViews;
             api.loadViews = async function (params) {
                 const res = await originalLoadViews.apply(this, arguments);
-                if (env.config.studioMode && env.config.studioModel === params.resModel && env.config.studioArch) {
+                if (env.config && env.config.studioMode && env.config.studioModel === params.resModel && env.config.studioArch) {
                     for (const viewType in res.views) {
                         if (env.config.studioViewType === viewType) {
                             res.views[viewType].arch = env.config.studioArch;
@@ -65,7 +65,7 @@ patch(FormRenderer.prototype, {
     setup() {
         super.setup(...arguments);
         
-        if (this.env.config.studioMode) {
+        if (this.env.config && this.env.config.studioMode) {
             onMounted(() => {
                 this.setupStudioInteractiveMode();
             });
@@ -77,6 +77,7 @@ patch(FormRenderer.prototype, {
 
     setupStudioInteractiveMode() {
         if (!this.el) return;
+        if (!this.env.config || !this.env.config.studioMode) return;
         
         // Add class to wrapper
         this.el.classList.add("o_studio_ce_design_mode");
@@ -118,6 +119,7 @@ patch(FormRenderer.prototype, {
     },
 
     onStudioMouseOver(ev) {
+        if (!this.env.config || !this.env.config.studioMode) return;
         ev.stopPropagation();
         const target = ev.target.closest(".o_field_widget, .o_group, .o_inner_group, .tab-pane, .o_form_sheet");
         if (!target) return;
@@ -128,6 +130,7 @@ patch(FormRenderer.prototype, {
     },
 
     onStudioMouseOut(ev) {
+        if (!this.env.config || !this.env.config.studioMode) return;
         ev.stopPropagation();
         const target = ev.target.closest(".o_field_widget, .o_group, .o_inner_group, .tab-pane, .o_form_sheet");
         if (target) {
@@ -136,6 +139,7 @@ patch(FormRenderer.prototype, {
     },
 
     onStudioClick(ev) {
+        if (!this.env.config || !this.env.config.studioMode) return;
         ev.preventDefault();
         ev.stopPropagation();
 
@@ -146,18 +150,18 @@ patch(FormRenderer.prototype, {
         this.el.querySelectorAll(".o_studio_ce_selected").forEach(el => el.classList.remove("o_studio_ce_selected"));
         target.classList.add("o_studio_ce_selected");
 
-        const xpath = getElementXPath(target, this.props.record.resModel);
+        const xpath = getElementXPath(target, this.props.record?.resModel);
         
         if (target.classList.contains("o_field_widget")) {
             const name = target.getAttribute("name");
             const fieldsList = this.env.config.fields || [];
             const field = fieldsList.find(f => f.name === name);
             if (field) {
-                this.env.config.onSelectField(field);
+                this.env.config.onSelectField?.(field);
             }
         } else {
             // Group/Page Layout Element
-            this.env.config.onSelectField({
+            this.env.config.onSelectField?.({
                 id: xpath,
                 name: xpath,
                 field_description: target.classList.contains("o_form_sheet") ? "Form Sheet" : (target.querySelector(".o_horizontal_separator, .fw-bold")?.textContent?.trim() || "Group Container"),
@@ -167,6 +171,7 @@ patch(FormRenderer.prototype, {
     },
 
     onStudioDragOver(ev) {
+        if (!this.env.config || !this.env.config.studioMode) return;
         ev.preventDefault();
         ev.stopPropagation();
         const target = ev.target.closest(".o_field_widget, .o_group, .o_inner_group, .tab-pane, .o_form_sheet");
@@ -176,6 +181,7 @@ patch(FormRenderer.prototype, {
     },
 
     onStudioDragLeave(ev) {
+        if (!this.env.config || !this.env.config.studioMode) return;
         ev.stopPropagation();
         const target = ev.target.closest(".o_field_widget, .o_group, .o_inner_group, .tab-pane, .o_form_sheet");
         if (target) {
@@ -184,6 +190,7 @@ patch(FormRenderer.prototype, {
     },
 
     async onStudioDrop(ev) {
+        if (!this.env.config || !this.env.config.studioMode) return;
         ev.preventDefault();
         ev.stopPropagation();
         
@@ -196,17 +203,17 @@ patch(FormRenderer.prototype, {
 
         try {
             const data = JSON.parse(dataStr);
-            const targetXpath = getElementXPath(target, this.props.record.resModel);
+            const targetXpath = getElementXPath(target, this.props.record?.resModel);
             const position = target.classList.contains("o_field_widget") ? "after" : "inside";
 
             if (data.type === "existing") {
                 if (data.xpath && data.xpath !== targetXpath) {
-                    await this.env.config.onMoveNode(data.xpath, targetXpath, position);
+                    await this.env.config.onMoveNode?.(data.xpath, targetXpath, position);
                 }
             } else if (data.type === "new") {
-                await this.env.config.onInsertNewField(data.fieldType, targetXpath, position);
+                await this.env.config.onInsertNewField?.(data.fieldType, targetXpath, position);
             } else if (data.type === "new_group") {
-                await this.env.config.onInsertNewGroup(targetXpath, position);
+                await this.env.config.onInsertNewGroup?.(targetXpath, position);
             }
         } catch (e) {
             console.error("Studio drop error", e);
@@ -218,7 +225,7 @@ patch(FormRenderer.prototype, {
 patch(ListRenderer.prototype, {
     setup() {
         super.setup(...arguments);
-        if (this.env.config.studioMode) {
+        if (this.env.config && this.env.config.studioMode) {
             onMounted(() => {
                 this.setupStudioInteractiveList();
             });
@@ -230,6 +237,7 @@ patch(ListRenderer.prototype, {
 
     setupStudioInteractiveList() {
         if (!this.el) return;
+        if (!this.env.config || !this.env.config.studioMode) return;
         this.el.classList.add("o_studio_ce_design_mode");
 
         // Click list headers to select field
@@ -237,19 +245,21 @@ patch(ListRenderer.prototype, {
         headers.forEach(th => {
             th.style.cursor = "pointer";
             th.addEventListener("click", (ev) => {
+                if (!this.env.config || !this.env.config.studioMode) return;
                 ev.preventDefault();
                 ev.stopPropagation();
                 const name = th.getAttribute("data-name");
                 const fieldsList = this.env.config.fields || [];
                 const field = fieldsList.find(f => f.name === name);
                 if (field) {
-                    this.env.config.onSelectField(field);
+                    this.env.config.onSelectField?.(field);
                 }
             }, true);
 
             // Drag and Drop on Headers
             th.setAttribute("draggable", "true");
             th.addEventListener("dragstart", (ev) => {
+                if (!this.env.config || !this.env.config.studioMode) return;
                 const name = th.getAttribute("data-name");
                 ev.dataTransfer.setData("text/plain", JSON.stringify({
                     type: "existing",
@@ -259,15 +269,18 @@ patch(ListRenderer.prototype, {
             });
             
             th.addEventListener("dragover", (ev) => {
+                if (!this.env.config || !this.env.config.studioMode) return;
                 ev.preventDefault();
                 th.classList.add("o_studio_ce_drag_over");
             });
 
             th.addEventListener("dragleave", () => {
+                if (!this.env.config || !this.env.config.studioMode) return;
                 th.classList.remove("o_studio_ce_drag_over");
             });
 
             th.addEventListener("drop", async (ev) => {
+                if (!this.env.config || !this.env.config.studioMode) return;
                 ev.preventDefault();
                 th.classList.remove("o_studio_ce_drag_over");
                 const dataStr = ev.dataTransfer.getData("text/plain");
@@ -279,10 +292,10 @@ patch(ListRenderer.prototype, {
 
                     if (data.type === "existing") {
                         if (data.name !== targetName) {
-                            await this.env.config.onMoveNode(data.xpath, targetXpath, "before");
+                            await this.env.config.onMoveNode?.(data.xpath, targetXpath, "before");
                         }
                     } else if (data.type === "new") {
-                        await this.env.config.onInsertNewField(data.fieldType, targetXpath, "before");
+                        await this.env.config.onInsertNewField?.(data.fieldType, targetXpath, "before");
                     }
                 } catch (e) {
                     console.error("List header drop error", e);
@@ -296,7 +309,7 @@ patch(ListRenderer.prototype, {
 patch(KanbanRenderer.prototype, {
     setup() {
         super.setup(...arguments);
-        if (this.env.config.studioMode) {
+        if (this.env.config && this.env.config.studioMode) {
             onMounted(() => {
                 this.setupStudioInteractiveKanban();
             });
@@ -308,6 +321,7 @@ patch(KanbanRenderer.prototype, {
 
     setupStudioInteractiveKanban() {
         if (!this.el) return;
+        if (!this.env.config || !this.env.config.studioMode) return;
         this.el.classList.add("o_studio_ce_design_mode");
 
         // Allow selection of fields inside kanban cards
@@ -315,13 +329,14 @@ patch(KanbanRenderer.prototype, {
         fields.forEach(field => {
             field.style.outline = "1px dashed rgba(0, 0, 255, 0.4)";
             field.addEventListener("click", (ev) => {
+                if (!this.env.config || !this.env.config.studioMode) return;
                 ev.preventDefault();
                 ev.stopPropagation();
                 const name = field.getAttribute("name") || field.className.match(/o_field_(\w+)/)?.[1];
                 const fieldsList = this.env.config.fields || [];
                 const fieldData = fieldsList.find(f => f.name === name);
                 if (fieldData) {
-                    this.env.config.onSelectField(fieldData);
+                    this.env.config.onSelectField?.(fieldData);
                 }
             }, true);
         });

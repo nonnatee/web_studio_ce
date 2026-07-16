@@ -9,7 +9,11 @@ export class StudioCeCanvas extends Component {
             mode: "canvas", // canvas (edit), form, list, kanban, xml
         });
 
-        // Initialize design mode in shared env config
+        // Initialize design mode in shared env config safely
+        if (!this.env.config) {
+            this.env.config = {};
+        }
+        
         this.env.config.studioMode = true;
         this.env.config.studioModel = this.props.model;
         this.env.config.studioViewId = this.props.view ? this.props.view.id : null;
@@ -24,15 +28,19 @@ export class StudioCeCanvas extends Component {
         this.env.config.onInsertNewGroup = this.props.onInsertNewGroup;
 
         onWillUpdateProps((nextProps) => {
-            this.env.config.studioModel = nextProps.model;
-            this.env.config.studioViewId = nextProps.view ? nextProps.view.id : null;
-            this.env.config.studioViewType = nextProps.view ? nextProps.view.type : null;
-            this.env.config.studioArch = nextProps.view ? nextProps.view.arch : null;
-            this.env.config.fields = nextProps.fields;
+            if (this.env.config) {
+                this.env.config.studioModel = nextProps.model;
+                this.env.config.studioViewId = nextProps.view ? nextProps.view.id : null;
+                this.env.config.studioViewType = nextProps.view ? nextProps.view.type : null;
+                this.env.config.studioArch = nextProps.view ? nextProps.view.arch : null;
+                this.env.config.fields = nextProps.fields;
+            }
         });
 
         onWillDestroy(() => {
-            this.env.config.studioMode = false;
+            if (this.env.config) {
+                this.env.config.studioMode = false;
+            }
         });
 
         if (this.props.onRegister) {
