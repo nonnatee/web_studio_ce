@@ -961,6 +961,10 @@ class StudioCeController(http.Controller):
 
         if not source_xpath and not target_xpath:
             modification_xml = node_xml
+        elif not source_xpath:
+            modification_xml = f'<xpath expr="{target_xpath}" position="{position}">{node_xml}</xpath>'
+        elif not target_xpath:
+            modification_xml = f'<xpath expr="{source_xpath}" position="replace"/>'
         else:
             # 1. Remove node from original position
             modification_xml = f'<xpath expr="{source_xpath}" position="replace"/>\n'

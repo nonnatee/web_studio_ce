@@ -158,7 +158,11 @@ export class StudioCeCanvas extends Component {
 
             if (data.type === "existing") {
                 if (data.name === targetFieldName) return;
-                await this.props.onMoveNode(data.xpath, targetXpath, position, data.xml);
+                if (data.xpath) {
+                    await this.props.onMoveNode(data.xpath, targetXpath, position, data.xml);
+                } else {
+                    await this.props.onInsertField(data.name, targetFieldName, position);
+                }
             } else if (data.type === "group") {
                 if (data.xpath === targetXpath) return;
                 await this.props.onMoveNode(data.xpath, targetXpath, position, data.xml);
@@ -191,7 +195,12 @@ export class StudioCeCanvas extends Component {
 
             if (data.type === "existing") {
                 if (data.xpath === targetXpath) return;
-                await this.props.onMoveNode(data.xpath, targetXpath, position, data.xml);
+                if (data.xpath) {
+                    await this.props.onMoveNode(data.xpath, targetXpath, position, data.xml);
+                } else {
+                    const targetField = (node.name === "sheet") ? null : targetXpath;
+                    await this.props.onInsertField(data.name, targetField, position);
+                }
             } else if (data.type === "group") {
                 if (data.xpath === targetXpath) return;
                 await this.props.onMoveNode(data.xpath, targetXpath, position, data.xml);
