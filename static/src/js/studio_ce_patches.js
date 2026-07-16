@@ -34,10 +34,27 @@ if (viewService) {
 function getElementXPath(el, model) {
     if (!el) return "";
     
-    // Field widget
-    if (el.classList.contains("o_field_widget") || el.hasAttribute("name")) {
-        const name = el.getAttribute("name") || el.className.match(/o_field_(\w+)/)?.[1];
+    // Field widget (Form/Kanban)
+    const fieldWidget = el.closest(".o_field_widget");
+    if (fieldWidget) {
+        const name = fieldWidget.getAttribute("name");
         if (name) return `//field[@name='${name}']`;
+    }
+
+    // List view column header
+    const thHeader = el.closest("th[data-name]");
+    if (thHeader) {
+        const name = thHeader.getAttribute("data-name");
+        if (name) return `//field[@name='${name}']`;
+    }
+
+    // Button
+    const btn = el.closest("button, .btn");
+    if (btn) {
+        const name = btn.getAttribute("name");
+        if (name) return `//button[@name='${name}']`;
+        const stringAttr = btn.getAttribute("string") || btn.textContent?.trim();
+        if (stringAttr) return `//button[@string='${stringAttr}']`;
     }
     
     // Group container
@@ -52,12 +69,17 @@ function getElementXPath(el, model) {
     const tabPane = el.closest(".tab-pane");
     if (tabPane) {
         const paneId = tabPane.getAttribute("id");
-        const tabLink = document.querySelector(`a[href="#${paneId}"], button[data-bs-target="#${paneId}"]`);
+        const tabLink = document.querySelector(`a[href="#${paneId}"], button[data-bs-target="#${paneId}"], a[data-bs-target="#${paneId}"]`);
         const tabString = tabLink?.textContent?.trim();
         if (tabString) return `//page[@string='${tabString}']`;
     }
 
-    return "//sheet";
+    // Sheet / default fallback
+    if (el.closest(".o_form_sheet")) {
+        return "//sheet";
+    }
+
+    return "//form";
 }
 
 // 2. Patch FormRenderer
