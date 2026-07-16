@@ -128,20 +128,57 @@ patch(FormRenderer.prototype, {
         this.el.addEventListener("dragleave", this.onStudioDragLeave.bind(this), true);
         this.el.addEventListener("drop", this.onStudioDrop.bind(this), true);
         
-        // Make field cards draggable
+        // Make field cards draggable only via visual handles
         const fields = this.el.querySelectorAll(".o_field_widget");
         fields.forEach(field => {
-            field.setAttribute("draggable", "true");
-            field.addEventListener("dragstart", (ev) => {
-                const name = field.getAttribute("name");
-                if (name) {
-                    ev.dataTransfer.setData("text/plain", JSON.stringify({
-                        type: "existing",
-                        name: name,
-                        xpath: `//field[@name='${name}']`
-                    }));
-                }
-            });
+            field.removeAttribute("draggable");
+            if (!field.querySelector(".o_studio_ce_drag_handle")) {
+                const handle = document.createElement("span");
+                handle.className = "o_studio_ce_drag_handle position-absolute d-flex align-items-center justify-content-center bg-primary text-white rounded-start";
+                handle.textContent = "⋮";
+                handle.setAttribute("draggable", "true");
+                
+                handle.addEventListener("dragstart", (ev) => {
+                    const name = field.getAttribute("name");
+                    if (name) {
+                        ev.dataTransfer.setData("text/plain", JSON.stringify({
+                            type: "existing",
+                            name: name,
+                            xpath: `//field[@name='${name}']`
+                        }));
+                        ev.dataTransfer.effectAllowed = "move";
+                    }
+                });
+                
+                field.style.position = "relative";
+                field.prepend(handle);
+            }
+        });
+
+        // Make groups draggable only via visual handles
+        const groups = this.el.querySelectorAll(".o_group, .o_inner_group");
+        groups.forEach(group => {
+            if (!group.querySelector(".o_studio_ce_drag_handle")) {
+                const handle = document.createElement("span");
+                handle.className = "o_studio_ce_drag_handle position-absolute d-flex align-items-center justify-content-center bg-purple text-white rounded-start";
+                handle.textContent = "⋮";
+                handle.setAttribute("draggable", "true");
+                
+                handle.addEventListener("dragstart", (ev) => {
+                    const xpath = getElementXPath(group, this.props.record?.resModel);
+                    if (xpath) {
+                        ev.dataTransfer.setData("text/plain", JSON.stringify({
+                            type: "existing",
+                            name: xpath,
+                            xpath: xpath
+                        }));
+                        ev.dataTransfer.effectAllowed = "move";
+                    }
+                });
+                
+                group.style.position = "relative";
+                group.prepend(handle);
+            }
         });
     },
 
@@ -425,17 +462,27 @@ patch(ListRenderer.prototype, {
                 }
             }, true);
 
-            // Drag and Drop on Headers
-            th.setAttribute("draggable", "true");
-            th.addEventListener("dragstart", (ev) => {
-                if (!this.env.config || !this.env.config.studioMode) return;
-                const name = th.getAttribute("data-name");
-                ev.dataTransfer.setData("text/plain", JSON.stringify({
-                    type: "existing",
-                    name: name,
-                    xpath: `//field[@name='${name}']`
-                }));
-            });
+            // Drag and Drop on Headers (only via visual handles)
+            th.removeAttribute("draggable");
+            if (!th.querySelector(".o_studio_ce_drag_handle")) {
+                const handle = document.createElement("span");
+                handle.className = "o_studio_ce_drag_handle position-absolute d-flex align-items-center justify-content-center bg-primary text-white rounded-start";
+                handle.textContent = "⋮";
+                handle.setAttribute("draggable", "true");
+                
+                handle.addEventListener("dragstart", (ev) => {
+                    if (!this.env.config || !this.env.config.studioMode) return;
+                    const name = th.getAttribute("data-name");
+                    ev.dataTransfer.setData("text/plain", JSON.stringify({
+                        type: "existing",
+                        name: name,
+                        xpath: `//field[@name='${name}']`
+                    }));
+                });
+                
+                th.style.position = "relative";
+                th.prepend(handle);
+            }
             
             th.addEventListener("dragover", (ev) => {
                 if (!this.env.config || !this.env.config.studioMode) return;

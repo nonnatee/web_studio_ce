@@ -482,4 +482,46 @@
         z-index: 1000;
         position: relative;
     }
+
+    // Precise Drag Handles
+    .o_studio_ce_drag_handle {
+        display: none !important;
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 14px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        line-height: 1;
+        letter-spacing: -1px;
+        align-items: center;
+        justify-content: center;
+        background-color: #007bff;
+        color: white;
+        cursor: grab;
+        z-index: 100;
+        user-select: none;
+        
+        &:active {
+            cursor: grabbing;
+        }
+
+        &.bg-purple {
+            background-color: #6f42c1 !important;
+        }
+    }
+
+    // Hover / selection layouts with shift spacing for handle
+    .o_field_widget, .o_group, .o_inner_group, th[data-name] {
+        transition: padding-left 0.15s ease-in-out;
+        
+        &.o_studio_ce_hover, &.o_studio_ce_selected {
+            padding-left: 18px !important;
+            
+            > .o_studio_ce_drag_handle {
+                display: flex !important;
+            }
+        }
+    }
 }
