@@ -142,7 +142,6 @@ patch(FormRenderer.prototype, {
 
     onStudioMouseOver(ev) {
         if (!this.env.config || !this.env.config.studioMode) return;
-        ev.stopPropagation();
         const target = ev.target.closest(".o_field_widget, .o_group, .o_inner_group, .tab-pane, .o_form_sheet");
         if (!target) return;
 
@@ -153,7 +152,6 @@ patch(FormRenderer.prototype, {
 
     onStudioMouseOut(ev) {
         if (!this.env.config || !this.env.config.studioMode) return;
-        ev.stopPropagation();
         const target = ev.target.closest(".o_field_widget, .o_group, .o_inner_group, .tab-pane, .o_form_sheet");
         if (target) {
             target.classList.remove("o_studio_ce_hover");
@@ -162,11 +160,16 @@ patch(FormRenderer.prototype, {
 
     onStudioClick(ev) {
         if (!this.env.config || !this.env.config.studioMode) return;
-        ev.preventDefault();
-        ev.stopPropagation();
 
         const target = ev.target.closest(".o_field_widget, .o_group, .o_inner_group, .tab-pane, .o_form_sheet");
         if (!target) return;
+
+        // Allow tab links and tab buttons to bubble up so OWL can switch tabs
+        const isTab = ev.target.closest(".nav-link, .nav-item");
+        if (!isTab) {
+            ev.preventDefault();
+            ev.stopPropagation();
+        }
 
         // Visual selection indicator
         this.el.querySelectorAll(".o_studio_ce_selected").forEach(el => el.classList.remove("o_studio_ce_selected"));
