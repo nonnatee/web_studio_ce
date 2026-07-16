@@ -524,4 +524,62 @@
             }
         }
     }
+
+    // Block Builder Visual Styles
+    .o_studio_ce_block {
+        transition: all 0.2s ease-in-out;
+        border-left-color: #6c757d !important;
+
+        &.o_studio_ce_block_field {
+            border-left-color: #007bff !important;
+        }
+        &.o_studio_ce_block_group {
+            border-left-color: #6f42c1 !important;
+            background-color: rgba(111, 66, 193, 0.02) !important;
+        }
+        &.o_studio_ce_block_notebook, &.o_studio_ce_block_page {
+            border-left-color: #fd7e14 !important;
+            background-color: rgba(253, 126, 20, 0.02) !important;
+        }
+        &.o_studio_ce_block_sheet {
+            border-left-color: #4b5563 !important;
+            background-color: rgba(75, 85, 99, 0.02) !important;
+        }
+        
+        &:hover {
+            border-color: #adb5bd !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05) !important;
+        }
+        
+        &.o_studio_ce_block_selected {
+            border-color: #007bff !important;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15) !important;
+            background-color: rgba(0, 123, 255, 0.03) !important;
+        }
+    }
+
+    // Active Drop Zones
+    .o_studio_ce_drop_zone {
+        height: 6px;
+        border-color: transparent !important;
+        background-color: transparent;
+        transition: all 0.2s ease-in-out;
+        overflow: hidden;
+        
+        span {
+            display: none !important;
+        }
+        
+        &.o_studio_ce_drop_zone_active {
+            height: 28px;
+            background-color: rgba(40, 167, 69, 0.08) !important;
+            border-color: #28a745 !important;
+            border-style: dashed !important;
+            
+            span {
+                display: block !important;
+                color: #28a745 !important;
+            }
+        }
+    }
 }

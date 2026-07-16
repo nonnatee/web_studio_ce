@@ -1,83 +1,225 @@
 /** @odoo-module **/
 
-import { Component, useState, onWillStart, onWillUpdateProps, onWillDestroy } from "@odoo/owl";
-import { View } from "@web/views/view";
+import { Component, useState, onWillStart, onWillUpdateProps } from "@odoo/owl";
 
 export class StudioCeCanvas extends Component {
     setup() {
         this.state = useState({
-            mode: "canvas", // canvas (edit), form, list, kanban, xml
+            blocks: [],
+            selectedBlockId: null,
         });
 
-        // Initialize design mode in shared env config safely
+        // Initialize design mode in shared config safely
         if (!this.env.config) {
             this.env.config = {};
         }
-        
         this.env.config.studioMode = true;
-        this.env.config.studioModel = this.props.model;
-        this.env.config.studioViewId = this.props.view ? this.props.view.id : null;
-        this.env.config.studioViewType = this.props.view ? this.props.view.type : null;
-        this.env.config.studioArch = this.props.view ? this.props.view.arch : null;
-        this.env.config.fields = this.props.fields;
-        
-        // Callback bindings for the patched renderers
-        this.env.config.onSelectField = this.props.onSelectField;
-        this.env.config.onMoveNode = this.props.onMoveNode;
-        this.env.config.onInsertNewField = this.props.onInsertNewField;
-        this.env.config.onInsertNewGroup = this.props.onInsertNewGroup;
+
+        onWillStart(async () => {
+            if (this.props.view) {
+                this.state.blocks = this.parseArchToBlocks(this.props.view.arch);
+            }
+        });
 
         onWillUpdateProps((nextProps) => {
-            if (this.env.config) {
-                this.env.config.studioModel = nextProps.model;
-                this.env.config.studioViewId = nextProps.view ? nextProps.view.id : null;
-                this.env.config.studioViewType = nextProps.view ? nextProps.view.type : null;
-                this.env.config.studioArch = nextProps.view ? nextProps.view.arch : null;
-                this.env.config.fields = nextProps.fields;
+            if (nextProps.view) {
+                this.state.blocks = this.parseArchToBlocks(nextProps.view.arch);
             }
         });
+    }
 
-        onWillDestroy(() => {
-            if (this.env.config) {
-                this.env.config.studioMode = false;
+    parseArchToBlocks(xmlStr) {
+        if (!xmlStr) return [];
+        try {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlStr, "text/xml");
+            const parserError = xmlDoc.querySelector("parsererror");
+            if (parserError) {
+                console.error("XML parse error", parserError.textContent);
+                return [];
             }
-        });
+            
+            let nodeIdCounter = 1;
+            const convert = (node, xpath = "") => {
+                if (node.nodeType !== 1) return null;
+                
+                const tag = node.nodeName;
+                if (["xpath", "data", "attribute"].includes(tag)) {
+                    const children = [];
+                    for (let i = 0; i < node.childNodes.length; i++) {
+                        const child = convert(node.childNodes[i], xpath);
+                        if (child) {
+                            if (Array.isArray(child)) children.push(...child);
+                            else children.push(child);
+                        }
+                    }
+                    return children;
+                }
+                
+                const attrs = {};
+                for (let i = 0; i < node.attributes.length; i++) {
+                    const attr = node.attributes[i];
+                    attrs[attr.name] = attr.value;
+                }
 
-        if (this.props.onRegister) {
-            this.props.onRegister(this);
+                let currentXpath = xpath;
+                if (tag === "field" && attrs.name) {
+                    currentXpath += `//field[@name='${attrs.name}']`;
+                } else if (tag === "group" && attrs.string) {
+                    currentXpath += `//group[@string='${attrs.string}']`;
+                } else if (tag === "page" && attrs.string) {
+                    currentXpath += `//page[@string='${attrs.string}']`;
+                } else if (attrs.name) {
+                    currentXpath += `//${tag}[@name='${attrs.name}']`;
+                } else {
+                    currentXpath += `//${tag}`;
+                }
+
+                const children = [];
+                for (let i = 0; i < node.childNodes.length; i++) {
+                    const child = convert(node.childNodes[i], currentXpath);
+                    if (child) {
+                        if (Array.isArray(child)) children.push(...child);
+                        else children.push(child);
+                    }
+                }
+
+                return {
+                    id: `block_${nodeIdCounter++}`,
+                    tag,
+                    attrs,
+                    xpath: currentXpath,
+                    children: children.filter(Boolean)
+                };
+            };
+            
+            const root = xmlDoc.documentElement;
+            if (!root) return [];
+            
+            const result = convert(root);
+            return Array.isArray(result) ? result : [result];
+        } catch (e) {
+            console.error("Failed to parse arch to blocks", e);
+            return [];
         }
     }
 
-    getViewType() {
-        if (this.state.mode === "canvas") {
-            return this.props.view ? this.props.view.type : "form";
+    getBlockLabel(block) {
+        if (block.tag === "field" && block.attrs.name) {
+            const field = this.props.fields.find(f => f.name === block.attrs.name);
+            return field ? field.string : (block.attrs.string || block.attrs.name);
         }
-        return this.state.mode;
+        if (block.tag === "page" && block.attrs.string) {
+            return block.attrs.string;
+        }
+        if (block.tag === "group" && block.attrs.string) {
+            return block.attrs.string;
+        }
+        return block.attrs.string || block.attrs.name || block.tag;
     }
 
-    async switchMode(newMode) {
-        if (newMode === 'form') {
-            const formView = this.props.views.find(v => v.type === 'form');
-            if (formView && (!this.props.view || this.props.view.id !== formView.id)) {
-                await this.props.onViewChange(formView.id);
-            }
-        } else if (newMode === 'list') {
-            const listView = this.props.views.find(v => v.type === 'list' || v.type === 'tree');
-            if (listView && (!this.props.view || this.props.view.id !== listView.id)) {
-                await this.props.onViewChange(listView.id);
-            }
-        } else if (newMode === 'kanban') {
-            const kanbanView = this.props.views.find(v => v.type === 'kanban');
-            if (kanbanView && (!this.props.view || this.props.view.id !== kanbanView.id)) {
-                await this.props.onViewChange(kanbanView.id);
-            }
+    isContainer(block) {
+        return ["sheet", "group", "notebook", "page", "form", "list", "tree", "kanban", "div", "header", "footer"].includes(block.tag);
+    }
+
+    getBlockClass(block) {
+        let cls = `o_studio_ce_block_${block.tag} `;
+        if (this.state.selectedBlockId === block.id) {
+            cls += "o_studio_ce_block_selected ";
         }
-        this.state.mode = newMode;
+        return cls.trim();
+    }
+
+    selectBlock(block) {
+        this.state.selectedBlockId = block.id;
+        
+        if (block.tag === "field") {
+            const fieldData = this.props.fields.find(f => f.name === block.attrs.name) || {
+                name: block.attrs.name,
+                field_description: block.attrs.string || block.attrs.name,
+                ttype: block.attrs.widget || "char",
+                required: block.attrs.required === "1" || block.attrs.required === "true",
+                invisible: block.attrs.invisible === "1" || block.attrs.invisible === "true",
+                readonly: block.attrs.readonly === "1" || block.attrs.readonly === "true",
+            };
+            this.props.onSelectField(fieldData);
+        } else {
+            this.props.onSelectField({
+                id: block.xpath,
+                name: block.xpath,
+                field_description: block.attrs.string || block.tag,
+                ttype: block.tag
+            });
+        }
+    }
+
+    async deleteBlock(block) {
+        if (confirm(`Are you sure you want to remove this ${block.tag} from the layout?`)) {
+            await this.props.onDeleteNode(block.xpath);
+        }
+    }
+
+    async renameBlockInline(block) {
+        const currentName = block.attrs.string || block.attrs.name || block.tag;
+        const newName = prompt(`Enter new label for this ${block.tag} block:`, currentName);
+        if (newName !== null && newName.trim() !== "" && newName !== currentName) {
+            const fieldName = block.tag === "field" ? block.attrs.name : block.xpath;
+            const prop = block.tag === "field" ? "label" : "string";
+            await this.props.onOverrideProperty(fieldName, prop, newName.trim());
+        }
+    }
+
+    onBlockDragStart(ev, block) {
+        ev.stopPropagation();
+        ev.dataTransfer.setData("text/plain", JSON.stringify({
+            type: "existing",
+            xpath: block.xpath,
+            tag: block.tag,
+            name: block.attrs.name || ""
+        }));
+        ev.dataTransfer.effectAllowed = "move";
+    }
+
+    onBlockDragOver(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        ev.currentTarget.classList.add("o_studio_ce_drop_zone_active");
+    }
+
+    onBlockDragLeave(ev) {
+        ev.stopPropagation();
+        ev.currentTarget.classList.remove("o_studio_ce_drop_zone_active");
+    }
+
+    async onBlockDrop(ev, targetBlock, position) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        
+        ev.currentTarget.classList.remove("o_studio_ce_drop_zone_active");
+        
+        const dataStr = ev.dataTransfer.getData("text/plain");
+        if (!dataStr) return;
+        
+        try {
+            const data = JSON.parse(dataStr);
+            
+            if (data.type === "existing") {
+                if (data.xpath && data.xpath !== targetBlock.xpath) {
+                    await this.props.onMoveNode(data.xpath, targetBlock.xpath, position);
+                }
+            } else if (data.type === "new") {
+                await this.props.onInsertNewField(data.fieldType, targetBlock.xpath, position);
+            } else if (data.type === "new_group") {
+                await this.props.onInsertNewGroup(targetBlock.xpath, position);
+            }
+        } catch (e) {
+            console.error("Drop error", e);
+        }
     }
 }
 
 StudioCeCanvas.template = "web_studio_ce.StudioCeCanvas";
-StudioCeCanvas.components = { View };
+StudioCeCanvas.components = {};
 StudioCeCanvas.props = {
     model: String,
     view: { type: true, optional: true },
@@ -92,6 +234,6 @@ StudioCeCanvas.props = {
     onMoveNode: Function,
     onDeleteNode: Function,
     onOverrideProperty: Function,
-    onRegister: Function,
     onViewChange: Function,
+    onRegister: { type: Function, optional: true },
 };

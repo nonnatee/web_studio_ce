@@ -1,56 +1,91 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="web_studio_ce.StudioCeCanvas" owl="1">
-        <div class="o_studio_ce_canvas d-flex flex-column h-100 bg-light p-3 position-relative">
-            <!-- Canvas Header -->
-            <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
-                <div>
-                    <h5 class="fw-bold text-dark mb-0">Live View Canvas</h5>
-                    <small class="text-muted" t-if="props.view">Active view: <span class="font-monospace"><t t-esc="props.view.name"/></span></small>
-                </div>
-                
-                <!-- Switchable view modes -->
-                <div class="btn-group btn-group-sm shadow-sm" role="group">
-                    <button type="button" class="btn py-1 px-3"
-                            t-att-class="state.mode === 'canvas' ? 'btn-primary fw-bold' : 'btn-outline-primary'"
-                            t-on-click="() => this.switchMode('canvas')">🛠️ Canvas Editor</button>
-                    <button type="button" class="btn py-1 px-3"
-                            t-att-class="state.mode === 'form' ? 'btn-primary fw-bold' : 'btn-outline-primary'"
-                            t-on-click="() => this.switchMode('form')">👁️ Form Preview</button>
-                    <button type="button" class="btn py-1 px-3"
-                            t-att-class="state.mode === 'list' ? 'btn-primary fw-bold' : 'btn-outline-primary'"
-                            t-on-click="() => this.switchMode('list')">👁️ List Preview</button>
-                    <button type="button" class="btn py-1 px-3"
-                            t-att-class="state.mode === 'kanban' ? 'btn-primary fw-bold' : 'btn-outline-primary'"
-                            t-on-click="() => this.switchMode('kanban')">👁️ Kanban Preview</button>
-                    <button type="button" class="btn py-1 px-3"
-                            t-att-class="state.mode === 'xml' ? 'btn-primary fw-bold' : 'btn-outline-primary'"
-                            t-on-click="() => this.switchMode('xml')">💻 Arch XML</button>
+        <div class="o_studio_ce_canvas h-100 d-flex flex-column position-relative bg-light p-3">
+            <div class="o_studio_ce_canvas_header bg-white border-bottom p-2 d-flex justify-content-between align-items-center mb-3 rounded shadow-sm">
+                <span class="fw-bold text-secondary small">🏗️ Canvas Layout Builder</span>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-primary text-uppercase" t-if="props.view" t-esc="props.view.type"/>
+                    <span class="text-muted small" t-if="props.view" t-esc="props.view.name"/>
                 </div>
             </div>
 
-            <!-- Empty State / No View Loaded -->
-            <div t-if="!props.view" class="flex-grow-1 d-flex flex-column justify-content-center align-items-center border-dashed rounded m-3 p-5">
-                <span class="fs-1 mb-3">🖥️</span>
-                <h5 class="fw-bold text-dark">No View Selected</h5>
-                <p class="text-muted text-center max-w-sm">Please choose a view from the model views list or open an app to load the live editor canvas.</p>
-            </div>
-
-            <!-- Form/List Render Canvas -->
-            <div t-else="" class="flex-grow-1 overflow-auto bg-white border rounded shadow-sm p-4">
-                <t t-if="state.mode === 'xml'">
-                    <div class="h-100 d-flex flex-column">
-                        <textarea class="form-control flex-grow-1 font-monospace" readonly="1" style="font-size:0.8rem; background-color: #f8f9fa; min-height: 350px;" rows="15"><t t-esc="props.view ? props.view.arch : ''"/></textarea>
-                    </div>
+            <div class="o_studio_ce_block_root flex-grow-1 overflow-auto bg-white border rounded shadow-sm p-4">
+                <t t-if="state.blocks &amp;&amp; state.blocks.length > 0">
+                    <t t-foreach="state.blocks" t-as="block" t-key="block.id">
+                        <t t-call="web_studio_ce.StudioCeBlockNode">
+                            <t t-set="block" t-value="block"/>
+                        </t>
+                    </t>
                 </t>
                 <t t-else="">
-                    <!-- Native Odoo View component instantiation -->
-                    <View type="getViewType()"
-                          resModel="props.model"
-                          viewId="props.view.id"
-                          display="{ controlPanel: false }"/>
+                    <div class="text-center text-muted py-5">
+                        <span class="fs-1 mb-2 d-block">📄</span>
+                        <p class="mb-0">No layouts or elements defined in this view.</p>
+                    </div>
                 </t>
             </div>
+        </div>
+    </t>
+
+    <!-- Recursive Block Template -->
+    <t t-name="web_studio_ce.StudioCeBlockNode" owl="1">
+        <div t-att-class="getBlockClass(block)"
+             t-att-data-xpath="block.xpath"
+             t-on-click.stop="() => this.selectBlock(block)"
+             t-on-dblclick.stop="() => this.renameBlockInline(block)"
+             class="o_studio_ce_block position-relative border rounded my-2 p-3 bg-white shadow-sm border-start border-3">
+             
+             <!-- Drag Handle (positioned absolute left) -->
+             <span class="o_studio_ce_block_drag_handle position-absolute start-0 top-0 bottom-0 d-flex align-items-center justify-content-center bg-light text-muted border-end" 
+                   style="width: 24px; cursor: grab;"
+                   draggable="true"
+                   t-on-dragstart.stop="(ev) => this.onBlockDragStart(ev, block)">
+                 ⋮⋮
+             </span>
+
+             <div class="d-flex justify-content-between align-items-center ms-3 ps-2">
+                 <div class="d-flex align-items-center gap-2">
+                     <span t-att-class="'badge text-uppercase ' + (block.tag === 'field' ? 'bg-primary text-white' : (block.tag === 'group' ? 'bg-purple text-white' : 'bg-secondary text-white'))" t-esc="block.tag"/>
+                     <strong class="text-dark" t-esc="getBlockLabel(block)"/>
+                     <span class="text-muted font-monospace small" t-if="block.attrs.name">(<t t-esc="block.attrs.name"/>)</span>
+                 </div>
+                 <div class="d-flex align-items-center gap-2">
+                     <button class="btn btn-xs btn-outline-danger border-0 p-1" title="Delete" t-on-click.stop="() => this.deleteBlock(block)">🗑️</button>
+                 </div>
+             </div>
+
+             <!-- Drop Zone Inside Container Elements -->
+             <div t-if="isContainer(block)" 
+                  class="o_studio_ce_block_children ms-3 ps-2 mt-3 p-3 border border-dashed rounded bg-light bg-opacity-25"
+                  style="min-height: 50px;"
+                  t-att-data-xpath="block.xpath"
+                  t-on-dragover.prevent.stop="onBlockDragOver"
+                  t-on-dragleave.stop="onBlockDragLeave"
+                  t-on-drop.stop="(ev) => this.onBlockDrop(ev, block, 'inside')">
+                  
+                  <!-- Loop children -->
+                  <t t-foreach="block.children" t-as="child" t-key="child.id">
+                      <!-- Drop Zone Before each child -->
+                      <div class="o_studio_ce_drop_zone my-1 rounded border border-dashed"
+                           t-att-data-xpath="child.xpath"
+                           t-att-data-position="'before'"
+                           t-on-dragover.prevent.stop="onBlockDragOver"
+                           t-on-dragleave.stop="onBlockDragLeave"
+                           t-on-drop.stop="(ev) => this.onBlockDrop(ev, child, 'before')">
+                          <span class="text-muted small px-2 py-1 d-block text-center font-monospace" style="font-size: 0.65rem;">↓ Drop here to place before <t t-esc="getBlockLabel(child)"/></span>
+                      </div>
+                      
+                      <!-- Recurse child block -->
+                      <t t-call="web_studio_ce.StudioCeBlockNode">
+                          <t t-set="block" t-value="child"/>
+                      </t>
+                  </t>
+                  
+                  <div t-if="block.children.length === 0" class="text-center text-muted py-3 small font-monospace" style="font-size: 0.72rem;">
+                      Empty <t t-esc="block.tag"/> (Drop items here)
+                  </div>
+             </div>
         </div>
     </t>
 </templates>
