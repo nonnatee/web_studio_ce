@@ -22,6 +22,69 @@ class StudioCeController(http.Controller):
         if hasattr(registry, 'init_models') and model_name:
             registry.init_models(env.cr, [model_name], env.context)
 
+    def _get_node_xpath(self, node):
+        if node is None:
+            return ""
+        if node.tag == 'field':
+            name = node.get('name')
+            if name:
+                return f"//field[@name='{name}']"
+        if node.tag == 'group':
+            string = node.get('string')
+            if string:
+                return f"//group[@string='{string}']"
+            name = node.get('name')
+            if name:
+                return f"//group[@name='{name}']"
+        if node.tag == 'page':
+            string = node.get('string')
+            if string:
+                return f"//page[@string='{string}']"
+            name = node.get('name')
+            if name:
+                return f"//page[@name='{name}']"
+                
+        parent = node.getparent()
+        if parent is not None:
+            siblings = [c for c in parent if c.tag == node.tag]
+            if len(siblings) > 1:
+                index = siblings.index(node) + 1
+                return f"{self._get_node_xpath(parent)}/{node.tag}[{index}]"
+            else:
+                return f"{self._get_node_xpath(parent)}/{node.tag}"
+        return f"/{node.tag}"
+
+    def _find_locatable_xpath(self, base_tree, compiled_tree, target_xpath):
+        try:
+            if base_tree.xpath(target_xpath):
+                return target_xpath, None
+        except Exception:
+            pass
+            
+        try:
+            compiled_nodes = compiled_tree.xpath(target_xpath)
+            if compiled_nodes:
+                node = compiled_nodes[0]
+                curr = node.getparent()
+                while curr is not None:
+                    curr_xpath = self._get_node_xpath(curr)
+                    if curr_xpath:
+                        try:
+                            if base_tree.xpath(curr_xpath):
+                                return curr_xpath, "inside"
+                        except Exception:
+                            pass
+                    curr = curr.getparent()
+        except Exception:
+            pass
+            
+        try:
+            if base_tree.xpath("//sheet"):
+                return "//sheet", "inside"
+        except Exception:
+            pass
+        return "//form", "inside"
+
     @http.route('/web_studio_ce/get_studio_context', type='json', auth='user')
     def get_studio_context(self, model_name, view_id=None):
         """Returns metadata about fields, views, automations, and groups for a given model."""
@@ -233,6 +296,45 @@ class StudioCeController(http.Controller):
         target_view = request.env['ir.ui.view'].browse(view_id)
         if not target_view.exists():
             return {'error': 'Target view not found.'}
+
+        # Parse and sanitize incoming modification_xml to ensure its expr tags are locatable in base view
+        try:
+            parser = etree.XMLParser(remove_blank_text=True)
+            stripped_xml = modification_xml.strip()
+            if stripped_xml.startswith('<data>'):
+                new_elements = etree.fromstring(stripped_xml.encode('utf-8'), parser=parser)
+            else:
+                wrapped_xml = f"<data>{modification_xml}</data>"
+                new_elements = etree.fromstring(wrapped_xml.encode('utf-8'), parser=parser)
+
+            compiled_tree = None
+            try:
+                if hasattr(target_view, 'get_combined_arch'):
+                    compiled_arch = target_view.get_combined_arch()
+                    compiled_tree = etree.fromstring(compiled_arch.encode('utf-8'), parser=parser)
+                else:
+                    compiled_tree = target_view._get_combined_arch()
+            except Exception:
+                pass
+
+            base_tree = etree.fromstring(target_view.arch.encode('utf-8'), parser=parser)
+
+            for xpath_elem in new_elements:
+                if xpath_elem.tag != 'xpath':
+                    continue
+                expr = xpath_elem.get('expr')
+                position = xpath_elem.get('position')
+                if expr and position != 'replace' and compiled_tree is not None:
+                    locatable_expr, pos_override = self._find_locatable_xpath(base_tree, compiled_tree, expr)
+                    if locatable_expr != expr:
+                        xpath_elem.set('expr', locatable_expr)
+                        if pos_override:
+                            xpath_elem.set('position', pos_override)
+
+            modification_xml = etree.tostring(new_elements, encoding='unicode')
+        except Exception as e:
+            # Fallback to original on parsing issues
+            pass
 
         # Find or create studio_ce inherited view
         studio_view = request.env['ir.ui.view'].search([
