@@ -169,6 +169,7 @@
                                     <input type="text" class="form-control" placeholder="Key" t-model="state.newOptionKey"/>
                                     <input type="text" class="form-control" placeholder="Label" t-model="state.newOptionValue"/>
                                     <button class="btn btn-primary" t-on-click="addSelectionOption">+</button>
+                                </div>
                             </div>
                             <button class="btn btn-sm btn-danger w-100 mt-3" t-on-click="removeFieldFromView">🗑️ Remove Field</button>
                         </t>
