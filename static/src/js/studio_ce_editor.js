@@ -284,6 +284,9 @@ export class StudioCeEditor extends Component {
                     ttype: 'group'
                 };
                 this.state.activeTab = "fields";
+            } else {
+                console.error("Failed to insert group", res.error);
+                alert(`Failed to insert group: ${res.error}`);
             }
         } catch (error) {
             console.error("Failed to insert group", error);
@@ -306,6 +309,9 @@ export class StudioCeEditor extends Component {
             });
             if (!res.error) {
                 await this.loadStudioContext();
+            } else {
+                console.error("Failed to move element", res.error);
+                alert(`Failed to move element: ${res.error}`);
             }
         } catch (error) {
             console.error("Failed to move element", error);
@@ -326,6 +332,9 @@ export class StudioCeEditor extends Component {
             if (!res.error) {
                 await this.loadStudioContext();
                 this.state.selectedField = null;
+            } else {
+                console.error("Failed to delete element", res.error);
+                alert(`Failed to delete element: ${res.error}`);
             }
         } catch (error) {
             console.error("Failed to delete element", error);

@@ -243,14 +243,19 @@ class StudioCeController(http.Controller):
         if not studio_view:
             # If modification_xml already starts with <data>, don't double wrap
             arch_xml = modification_xml if modification_xml.strip().startswith('<data>') else f'<data>{modification_xml}</data>'
-            studio_view = request.env['ir.ui.view'].create({
-                'name': f'{target_view.name}_studio_ce_custom',
-                'model': target_view.model,
-                'inherit_id': target_view.id,
-                'mode': 'extension',
-                'is_studio_ce': True,
-                'arch': arch_xml
-            })
+            try:
+                studio_view = request.env['ir.ui.view'].create({
+                    'name': f'{target_view.name}_studio_ce_custom',
+                    'model': target_view.model,
+                    'inherit_id': target_view.id,
+                    'mode': 'extension',
+                    'is_studio_ce': True,
+                    'arch': arch_xml
+                })
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).exception("Failed to create studio view customisation")
+                return {'error': f'View Creation Error: {str(e)}'}
         else:
             # Append modifications or mutate existing view arch in-place
             try:

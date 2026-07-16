@@ -263,9 +263,18 @@ export class StudioCeCanvas extends Component {
         }
     }
 
+    escapeXml(unsafe) {
+        return (unsafe || "").toString()
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&apos;');
+    }
+
     serializeNode(node) {
         let attrs = Object.entries(node.attrs || {})
-            .map(([k, v]) => `${k}="${v}"`)
+            .map(([k, v]) => `${k}="${this.escapeXml(v)}"`)
             .join(" ");
         if (attrs) attrs = " " + attrs;
         if (!node.children || node.children.length === 0) {
