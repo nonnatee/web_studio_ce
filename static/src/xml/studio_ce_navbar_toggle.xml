@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-inherit="web.NavBar" t-inherit-mode="extension" owl="1">
+        <xpath expr="//div[hasclass('o_menu_systray')]" position="before">
+            <button t-if="isStudioCeAdmin" 
+                    class="btn btn-light o_studio_ce_navbar_toggle_btn d-flex align-items-center gap-1 border rounded-pill px-3 py-1 me-2 shadow-sm"
+                    t-on-click="onStudioCeClick"
+                    title="Toggle Studio CE"
+                    style="font-size: 0.85rem; font-weight: 600; color: #714B67; border-color: rgba(113, 75, 103, 0.2); transition: all 0.2s ease-in-out;">
+                <span class="fs-6">🛠️</span>
+                <span>Studio</span>
+            </button>
+        </xpath>
+    </t>
+</templates>

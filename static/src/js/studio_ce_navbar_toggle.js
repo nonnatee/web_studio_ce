@@ -26,6 +26,10 @@ patch(NavBar.prototype, {
         if (actionService) {
             const currentController = actionService.currentController;
             if (currentController && currentController.action) {
+                if (currentController.action.tag === "web_studio_ce.editor_action") {
+                    actionService.doAction("home");
+                    return;
+                }
                 const model = currentController.action.res_model;
                 actionService.doAction({
                     type: "ir.actions.client",
