@@ -7,6 +7,7 @@ class IrModel(models.Model):
     is_studio_ce = fields.Boolean(
         string='Created by Studio CE',
         default=False,
+        prefetch=False,
         help='Indicates if this model was created dynamically via Odoo Studio CE.'
     )
 
@@ -16,6 +17,7 @@ class IrRule(models.Model):
     is_studio_ce = fields.Boolean(
         string='Created by Studio CE',
         default=False,
+        prefetch=False,
         help='Indicates if this record rule was created dynamically via Odoo Studio CE.'
     )
 
