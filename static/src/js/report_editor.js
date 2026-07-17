@@ -215,6 +215,7 @@ export class ReportEditor extends Component {
                 arch: arch
             });
             if (res.status === "success") {
+                this.props.report.arch = arch; // Update local arch
                 alert("Report layout saved successfully!");
                 this.refreshPreview();
             } else {
@@ -226,6 +227,65 @@ export class ReportEditor extends Component {
         }
     }
 
+    onXmlSourceChange(ev) {
+        const val = ev.target.value;
+        this.props.report.arch = val;
+        this.state.parsedTree = this.parseQWebXml(val);
+    }
+
+    insertQWebSnippet(snippetType) {
+        if (!this.state.selectedNode) {
+            alert("Please select a target QWeb node in the tree first.");
+            return;
+        }
+        const rawNode = this.state.selectedNode._originalNodeRef;
+        if (!rawNode) return;
+
+        let newElem = null;
+        if (snippetType === 'field') {
+            newElem = this.xmlDoc.createElement("span");
+            newElem.setAttribute("t-field", "o.x_name");
+        } else if (snippetType === 'table') {
+            newElem = this.xmlDoc.createElement("table");
+            newElem.setAttribute("class", "table table-sm o_main_table");
+            
+            const thead = this.xmlDoc.createElement("thead");
+            const trHead = this.xmlDoc.createElement("tr");
+            const th = this.xmlDoc.createElement("th");
+            th.textContent = "Description";
+            trHead.appendChild(th);
+            thead.appendChild(trHead);
+            
+            const tbody = this.xmlDoc.createElement("tbody");
+            const trBody = this.xmlDoc.createElement("tr");
+            trBody.setAttribute("t-foreach", "o.line_ids");
+            trBody.setAttribute("t-as", "line");
+            const td = this.xmlDoc.createElement("td");
+            const span = this.xmlDoc.createElement("span");
+            span.setAttribute("t-field", "line.name");
+            td.appendChild(span);
+            trBody.appendChild(td);
+            tbody.appendChild(trBody);
+
+            newElem.appendChild(thead);
+            newElem.appendChild(tbody);
+        } else if (snippetType === 'if') {
+            newElem = this.xmlDoc.createElement("div");
+            newElem.setAttribute("t-if", "o.state == 'draft'");
+            newElem.textContent = "Visible only in Draft state";
+        }
+
+        if (newElem) {
+            rawNode.appendChild(newElem);
+            const newArch = this.serializeQWebXml();
+            this.props.report.arch = newArch;
+            this.state.parsedTree = this.parseQWebXml(newArch);
+            this.state.selectedNode = null;
+            this.state.selectedNodeId = null;
+            this.state.activeEditorTab = "tree";
+        }
+    }
+
     refreshPreview() {
         if (this.previewIframe.el) {
             this.previewIframe.el.src = this.reportPreviewUrl;
@@ -233,7 +293,52 @@ export class ReportEditor extends Component {
     }
 
     onIframeLoaded() {
-        // Option to intercept iframe clicks if needed
+        const iframe = this.previewIframe.el;
+        if (!iframe || !iframe.contentDocument) return;
+        const doc = iframe.contentDocument;
+
+        // Add visual designer outline styles inside the iframe
+        const style = doc.createElement("style");
+        style.innerHTML = `
+            div, p, span, td, th, table, section {
+                outline: 1px dashed rgba(124, 93, 250, 0.2);
+                transition: all 0.2s;
+            }
+            div:hover, p:hover, span:hover, td:hover, th:hover, table:hover {
+                outline: 2px solid #7c5dfa !important;
+                cursor: pointer;
+            }
+        `;
+        doc.head.appendChild(style);
+
+        // Listen for element selection clicks inside preview iframe
+        doc.addEventListener("click", (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+
+            const target = ev.target;
+            const xpath = target.getAttribute("data-oe-xpath");
+            if (xpath) {
+                // Find node by xpath inside parsedTree
+                const findNode = (nodes) => {
+                    for (const node of nodes) {
+                        // Estimate xpath of node
+                        if (node.tag === target.tagName.toLowerCase()) {
+                            // Match
+                        }
+                        if (node.children) {
+                            const found = findNode(node.children);
+                            if (found) return found;
+                        }
+                    }
+                    return null;
+                };
+                
+                // Alert parent window about selection
+                const nodeLabel = target.tagName.toLowerCase() + (target.className ? '.' + target.className.split(' ')[0] : '');
+                alert(`Selected element: <${nodeLabel}>. Use QWeb Tree or Properties tab to edit.`);
+            }
+        });
     }
 }
 

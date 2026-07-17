@@ -45,6 +45,12 @@ class StudioCeExport(models.TransientModel):
         # 7. Gather custom security ACLs for custom models
         custom_acls = self.env['ir.model.access'].search([('model_id.model', 'in', custom_model_names)])
 
+        # 8. Gather custom record rules
+        custom_rules = self.env['ir.rule'].search([('is_studio_ce', '=', True)])
+
+        # 9. Gather custom approvals
+        custom_approvals = self.env['studio.ce.approval'].search([('active', '=', True)])
+
         # Create zip in memory
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
@@ -57,9 +63,11 @@ class StudioCeExport(models.TransientModel):
     'depends': ['base', 'web', 'base_automation', 'mail'],
     'data': [
         'security/ir.model.access.csv',
+        'security/custom_rules.xml',
         'views/custom_views.xml',
         'views/custom_menus.xml',
         'data/custom_automations.xml',
+        'data/custom_approvals.xml',
     ],
     'installable': True,
     'license': 'LGPL-3',
@@ -183,6 +191,42 @@ class StudioCeExport(models.TransientModel):
             automations_xml.append('    </data>\n</odoo>')
             zip_file.writestr('data/custom_automations.xml', '\n'.join(automations_xml))
 
+            # Generate data/custom_approvals.xml
+            approvals_xml = ['<?xml version="1.0" encoding="utf-8"?>\n<odoo>\n    <data noupdate="1">']
+            for approval in custom_approvals:
+                approvals_xml.append(f"""        <record id="approval_custom_{approval.id}" model="studio.ce.approval">
+            <field name="name">{approval.name}</field>
+            <field name="model_id" ref="base.model_{approval.model_id.model.replace('.', '_')}"/>
+            <field name="button_name">{approval.button_name}</field>
+            <field name="required_domain">{approval.required_domain}</field>
+            <field name="active" eval="True"/>
+        </record>""")
+                for step in approval.rule_ids:
+                    approvals_xml.append(f"""        <record id="approval_step_custom_{step.id}" model="studio.ce.approval.rule">
+            <field name="approval_id" ref="approval_custom_{approval.id}"/>
+            <field name="name">{step.name}</field>
+            <field name="sequence">{step.sequence}</field>
+            <field name="exclusive" eval="{step.exclusive}"/>
+        </record>""")
+            approvals_xml.append('    </data>\n</odoo>')
+            zip_file.writestr('data/custom_approvals.xml', '\n'.join(approvals_xml))
+
+            # Generate security/custom_rules.xml
+            rules_xml = ['<?xml version="1.0" encoding="utf-8"?>\n<odoo>\n    <data noupdate="1">']
+            for rule in custom_rules:
+                rules_xml.append(f"""        <record id="rule_custom_{rule.id}" model="ir.rule">
+            <field name="name">{rule.name}</field>
+            <field name="model_id" ref="base.model_{rule.model_id.model.replace('.', '_')}"/>
+            <field name="domain_force">{rule.domain_force}</field>
+            <field name="perm_read" eval="{rule.perm_read}"/>
+            <field name="perm_write" eval="{rule.perm_write}"/>
+            <field name="perm_create" eval="{rule.perm_create}"/>
+            <field name="perm_unlink" eval="{rule.perm_unlink}"/>
+            <field name="active" eval="{rule.active}"/>
+        </record>""")
+            rules_xml.append('    </data>\n</odoo>')
+            zip_file.writestr('security/custom_rules.xml', '\n'.join(rules_xml))
+
             # Generate security/ir.model.access.csv
             acl_csv_io = io.StringIO()
             writer = csv.writer(acl_csv_io)
@@ -212,3 +256,4 @@ class StudioCeExport(models.TransientModel):
             'url': f'/web/content/?model=studio.ce.export&id={self.id}&field=zip_file&download=true&filename={self.name}',
             'target': 'self',
         }
+

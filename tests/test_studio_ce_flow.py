@@ -117,42 +117,56 @@ class TestStudioCeFlow(TransactionCase):
         self.assertEqual(action.base_automation_id.id, auto.id)
 
     def test_06_approval_workflows(self):
-        """Test approval configuration and approve/reject execution."""
-        state_field = self.env['ir.model.fields'].create({
-            'name': 'x_studio_approval_state',
+        """Test button-level multi-step approvals configuration and execution interception."""
+        approval = self.env['studio.ce.approval'].create({
+            'name': 'Partner Write Button Approval',
             'model_id': self.partner_model.id,
-            'model': 'res.partner',
-            'field_description': 'Approval State',
-            'ttype': 'selection',
-            'selection': "[('draft', 'Draft'), ('to_approve', 'To Approve'), ('approved', 'Approved'), ('refused', 'Refused')]",
-            'state': 'manual',
+            'button_name': 'write',
+            'required_domain': '[]',
+        })
+        self.assertTrue(approval.exists())
+        self.assertEqual(approval.button_name, 'write')
+
+        step1 = self.env['studio.ce.approval.rule'].create({
+            'approval_id': approval.id,
+            'name': 'Manager Approval',
+            'sequence': 10,
+            'user_ids': [(6, 0, [self.env.user.id])],
+        })
+        step2 = self.env['studio.ce.approval.rule'].create({
+            'approval_id': approval.id,
+            'name': 'Director Approval',
+            'sequence': 20,
+            'exclusive': True,
+        })
+        self.assertTrue(step1.exists())
+        self.assertTrue(step2.exists())
+
+        partner = self.env['res.partner'].create({'name': 'Test Partner'})
+
+        from odoo.exceptions import UserError
+        
+        # Calling write should raise UserError because second step is pending
+        with self.assertRaises(UserError):
+            partner.write({'name': 'New Partner Name'})
+        
+        # Verify first step was logged/approved automatically
+        log1 = self.env['studio.ce.approval.log'].search([
+            ('rule_id', '=', step1.id),
+            ('res_id', '=', partner.id)
+        ])
+        self.assertTrue(log1.exists())
+
+    def test_07_record_rules(self):
+        """Test record rules creation and flags."""
+        rule = self.env['ir.rule'].create({
+            'name': 'Custom Security Rule',
+            'model_id': self.partner_model.id,
+            'domain_force': "[('create_uid', '=', user.id)]",
             'is_studio_ce': True,
         })
-        
-        approval = self.env['studio.ce.approval'].create({
-            'name': 'Partner Approval',
-            'model_id': self.partner_model.id,
-            'min_approvals': 1,
-            'state_field_id': state_field.id,
-            'approved_value': 'approved',
-            'refused_value': 'refused',
-        })
-        
-        self.assertTrue(approval.exists())
-        self.assertEqual(approval.model_name, 'res.partner')
-
-        # Test approving/rejecting a partner record
-        partner = self.env['res.partner'].create({
-            'name': 'Test Partner',
-            'x_studio_approval_state': 'to_approve',
-        })
-        
-        partner.action_studio_approve()
-        self.assertEqual(partner.x_studio_approval_state, 'approved')
-        
-        partner.write({'x_studio_approval_state': 'to_approve'})
-        partner.action_studio_reject()
-        self.assertEqual(partner.x_studio_approval_state, 'refused')
+        self.assertTrue(rule.exists())
+        self.assertTrue(rule.is_studio_ce)
 
 
 class TestStudioCeProductFlow(TransactionCase):

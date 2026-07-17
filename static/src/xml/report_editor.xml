@@ -43,6 +43,9 @@
                         <li class="nav-item">
                             <button class="nav-link py-2" t-att-class="state.activeEditorTab === 'properties' ? 'active fw-bold' : ''" t-on-click="() => this.state.activeEditorTab = 'properties'">Properties</button>
                         </li>
+                        <li class="nav-item">
+                            <button class="nav-link py-2" t-att-class="state.activeEditorTab === 'xml' ? 'active fw-bold' : ''" t-on-click="() => this.state.activeEditorTab = 'xml'">XML Source</button>
+                        </li>
                     </ul>
 
                     <div class="tab-content p-3 flex-grow-1 overflow-auto">
@@ -57,6 +60,14 @@
                             </div>
                         </div>
 
+                        <!-- XML Source Direct Editor -->
+                        <div t-if="state.activeEditorTab === 'xml'" class="tab-pane show active h-100 d-flex flex-column">
+                            <label class="form-label text-secondary small fw-bold">Raw QWeb Template XML</label>
+                            <textarea class="form-control form-control-sm font-monospace flex-grow-1" rows="18" style="font-size:0.75rem; resize: none;" 
+                                      t-att-value="props.report.arch"
+                                      t-on-change="onXmlSourceChange"/>
+                        </div>
+
                         <!-- CSS Styles & Content Editor -->
                         <div t-if="state.activeEditorTab === 'properties'" class="tab-pane show active">
                             <t t-if="state.selectedNode">
@@ -65,8 +76,19 @@
                                     <input type="text" class="form-control form-control-sm bg-light font-monospace" t-att-value="state.selectedNode.tag" readonly="1"/>
                                 </div>
 
+                                <!-- Insert Snippets Dropdown -->
+                                <div class="mb-3 border-top pt-2">
+                                    <label class="form-label text-secondary small fw-bold d-block">⚡ Slash Commands / Snippets</label>
+                                    <div class="btn-group w-100">
+                                        <button class="btn btn-outline-primary btn-sm" t-on-click="() => this.insertQWebSnippet('field')">/field</button>
+                                        <button class="btn btn-outline-primary btn-sm" t-on-click="() => this.insertQWebSnippet('table')">/table</button>
+                                        <button class="btn btn-outline-primary btn-sm" t-on-click="() => this.insertQWebSnippet('if')">/if</button>
+                                    </div>
+                                    <small class="text-muted" style="font-size:0.7rem;">Inserts dynamic content inside the selected node.</small>
+                                </div>
+
                                 <!-- Text Value editing -->
-                                <div class="mb-3" t-if="isTextNode(state.selectedNode)">
+                                <div class="mb-3 border-top pt-2" t-if="isTextNode(state.selectedNode)">
                                     <label class="form-label text-secondary small fw-bold">Text Value</label>
                                     <textarea class="form-control form-control-sm" rows="3" 
                                               t-att-value="state.selectedNode.text"

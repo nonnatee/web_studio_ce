@@ -180,6 +180,29 @@ patch(FormRenderer.prototype, {
                 group.prepend(handle);
             }
         });
+
+        // Render Approval Status Badges on Buttons in Design Mode
+        const approvals = this.env.config.approvals || [];
+        const buttons = this.el.querySelectorAll("button, .btn");
+        buttons.forEach(btn => {
+            const btnName = btn.getAttribute("name");
+            if (!btnName) return;
+            
+            const approval = approvals.find(a => a.button_name === btnName);
+            if (approval) {
+                // Clear existing
+                btn.querySelectorAll(".o_studio_ce_approval_badge").forEach(b => b.remove());
+                
+                const badgeContainer = document.createElement("span");
+                badgeContainer.className = "o_studio_ce_approval_badge d-inline-flex align-items-center gap-1 ms-2 px-1 rounded bg-warning text-dark fw-bold border";
+                badgeContainer.style.fontSize = "0.7rem";
+                badgeContainer.style.pointerEvents = "none";
+                badgeContainer.style.verticalAlign = "middle";
+                badgeContainer.innerHTML = `🛡️ ${approval.steps.length} Step${approval.steps.length > 1 ? 's' : ''}`;
+                
+                btn.appendChild(badgeContainer);
+            }
+        });
     },
 
     onStudioMouseOver(ev) {

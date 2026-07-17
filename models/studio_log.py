@@ -14,12 +14,21 @@ class StudioCeLog(models.Model):
         ('field_create', 'Field Created'),
         ('view_modify', 'View XML Modified'),
         ('property_override', 'Field Property Override'),
+        ('approval_create', 'Approval Rule Created'),
+        ('rule_create', 'Record Security Rule Created'),
+        ('automation_create', 'Automation Rule Created'),
+        ('menu_create', 'Menu Created'),
     ], string='Change Type', default='view_modify')
     
     # Store exact details for reverting
     field_id = fields.Many2one('ir.model.fields', string='Dynamic Field')
     xpath_expr = fields.Char(string='XPath Expression')
     modification_xml = fields.Text(string='XML Modifications')
+    
+    # Generic target reference for approvals, rules, automations, menus
+    target_model = fields.Char(string='Target Record Model')
+    target_res_id = fields.Integer(string='Target Record ID')
+    
     active = fields.Boolean(default=True)
 
     def action_revert(self):
@@ -83,4 +92,13 @@ class StudioCeLog(models.Model):
                 except Exception:
                     pass
 
+        elif self.log_type in ['approval_create', 'rule_create', 'automation_create', 'menu_create'] and self.target_model and self.target_res_id:
+            try:
+                target_record = self.env[self.target_model].browse(self.target_res_id)
+                if target_record.exists():
+                    target_record.unlink()
+            except Exception:
+                pass
+
         self.active = False
+

@@ -8,9 +8,24 @@ export class SecurityEditor extends Component {
         this.state = useState({
             acls: [],
             availableGroups: [],
+            allGroups: [],
             selectedGroupId: "",
             loading: true,
             saving: false,
+            
+            // Record Rules
+            recordRules: [],
+            selectedRule: null,
+            ruleForm: {
+                id: null,
+                name: "",
+                domain_force: "",
+                perm_read: true,
+                perm_write: true,
+                perm_create: true,
+                perm_unlink: true,
+                group_ids: []
+            }
         });
 
         onWillStart(async () => {
@@ -32,7 +47,7 @@ export class SecurityEditor extends Component {
             });
             if (!data.error) {
                 this.state.acls = data.acls;
-                // Filter out groups already in ACL list to show in dropdown
+                this.state.allGroups = data.groups || [];
                 const existingGroupIds = new Set(data.acls.map(a => a.group_id));
                 this.state.availableGroups = data.groups.filter(g => !existingGroupIds.has(g.id));
                 if (this.state.availableGroups.length > 0) {
@@ -40,6 +55,13 @@ export class SecurityEditor extends Component {
                 } else {
                     this.state.selectedGroupId = "";
                 }
+            }
+            
+            const contextData = await rpc("/web_studio_ce/get_studio_context", {
+                model_name: modelName,
+            });
+            if (contextData && !contextData.error) {
+                this.state.recordRules = contextData.record_rules || [];
             }
         } catch (error) {
             console.error("Failed to load security matrix", error);
@@ -54,9 +76,8 @@ export class SecurityEditor extends Component {
         const group = this.state.availableGroups.find(g => g.id === gId);
         if (!group) return;
 
-        // Add locally to the state
         this.state.acls.push({
-            id: false, // brand new record
+            id: false,
             name: `access_${this.props.model}_${group.id}`,
             group_id: group.id,
             group_name: group.name,
@@ -66,7 +87,6 @@ export class SecurityEditor extends Component {
             unlink: true,
         });
 
-        // Recalculate dropdown
         this.state.availableGroups = this.state.availableGroups.filter(g => g.id !== gId);
         if (this.state.availableGroups.length > 0) {
             this.state.selectedGroupId = this.state.availableGroups[0].id.toString();
@@ -89,6 +109,93 @@ export class SecurityEditor extends Component {
             console.error("Failed to save security permissions", error);
         } finally {
             this.state.saving = false;
+        }
+    }
+
+    editRule(rule) {
+        this.state.selectedRule = rule;
+        this.state.ruleForm = {
+            id: rule.id,
+            name: rule.name,
+            domain_force: rule.domain_force,
+            perm_read: rule.perm_read,
+            perm_write: rule.perm_write,
+            perm_create: rule.perm_create,
+            perm_unlink: rule.perm_unlink,
+            group_ids: [...rule.group_ids]
+        };
+    }
+
+    createNewRule() {
+        const newRule = {
+            id: null,
+            name: "New Record Rule",
+            domain_force: "[('create_uid', '=', user.id)]",
+            perm_read: true,
+            perm_write: true,
+            perm_create: true,
+            perm_unlink: true,
+            group_ids: []
+        };
+        this.state.selectedRule = newRule;
+        this.state.ruleForm = newRule;
+    }
+
+    cancelRuleEdit() {
+        this.state.selectedRule = null;
+    }
+
+    async saveRule() {
+        this.state.saving = true;
+        try {
+            const res = await rpc("/web_studio_ce/save_record_rule", {
+                model_name: this.props.model,
+                name: this.state.ruleForm.name,
+                domain_force: this.state.ruleForm.domain_force,
+                perm_read: this.state.ruleForm.perm_read,
+                perm_write: this.state.ruleForm.perm_write,
+                perm_create: this.state.ruleForm.perm_create,
+                perm_unlink: this.state.ruleForm.perm_unlink,
+                group_ids: this.state.ruleForm.group_ids,
+                rule_id: this.state.ruleForm.id
+            });
+            if (!res.error) {
+                await this.loadSecurity();
+                this.state.selectedRule = null;
+            } else {
+                alert(res.error);
+            }
+        } catch (error) {
+            console.error("Failed to save rule", error);
+        } finally {
+            this.state.saving = false;
+        }
+    }
+
+    async deleteRule(ruleId) {
+        if (!confirm("Are you sure you want to delete this record rule?")) return;
+        this.state.saving = true;
+        try {
+            const res = await rpc("/web_studio_ce/delete_record_rule", {
+                rule_id: ruleId
+            });
+            if (!res.error) {
+                await this.loadSecurity();
+                this.state.selectedRule = null;
+            }
+        } catch (error) {
+            console.error("Failed to delete rule", error);
+        } finally {
+            this.state.saving = false;
+        }
+    }
+
+    toggleGroupInRule(groupId) {
+        const idx = this.state.ruleForm.group_ids.indexOf(groupId);
+        if (idx >= 0) {
+            this.state.ruleForm.group_ids.splice(idx, 1);
+        } else {
+            this.state.ruleForm.group_ids.push(groupId);
         }
     }
 }

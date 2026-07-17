@@ -26,6 +26,7 @@ export class StudioCeEditor extends Component {
             groups: [],
             logs: [],
             approvals: [],
+            recordRules: [],
             loading: true,
             showDocs: false,
             showAppCreator: false,
@@ -65,6 +66,12 @@ export class StudioCeEditor extends Component {
                 this.state.automations = data.automations;
                 this.state.groups = data.groups;
                 this.state.approvals = data.approvals || [];
+                this.state.recordRules = data.record_rules || [];
+                
+                if (this.env.config) {
+                    this.env.config.approvals = this.state.approvals;
+                    this.env.config.fields = this.state.fields;
+                }
             }
 
             // Load Customisation Logs

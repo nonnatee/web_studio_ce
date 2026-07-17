@@ -3,58 +3,97 @@
     <t t-name="web_studio_ce.ApprovalEditor" owl="1">
         <div class="card p-3 mb-3 border shadow-sm" style="border-radius: 8px;">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <span class="fw-bold text-dark small">✍️ Approval Config</span>
+                <span class="fw-bold text-dark small">🛡️ Button Approval Rules</span>
                 <span t-if="state.saving" class="spinner-border spinner-border-sm text-primary" role="status"></span>
+            </div>
+
+            <!-- Button Target Name (Read-only) -->
+            <div class="mb-3">
+                <label class="form-label text-secondary small fw-bold">Target Button Method</label>
+                <input type="text" class="form-control form-control-sm bg-light" readonly="1"
+                       t-att-value="props.approval.button_name"/>
             </div>
 
             <!-- Workflow Name -->
             <div class="mb-3">
-                <label class="form-label text-secondary small fw-bold">Workflow Name</label>
+                <label class="form-label text-secondary small fw-bold">Workflow Rule Name</label>
                 <input type="text" class="form-control form-control-sm"
                        t-att-value="props.approval.name"
-                       t-on-change="(ev) => this.updateApproval('name', ev.target.value)"/>
-            </div>
-
-            <!-- Minimum Approvals -->
-            <div class="mb-3">
-                <label class="form-label text-secondary small fw-bold">Minimum Approvals</label>
-                <input type="number" class="form-control form-control-sm"
-                       t-att-value="props.approval.min_approvals"
-                       t-on-change="(ev) => this.updateApproval('min_approvals', ev.target.value)"/>
-            </div>
-
-            <!-- Trigger State Field -->
-            <div class="mb-3">
-                <label class="form-label text-secondary small fw-bold">Approval State Field</label>
-                <input type="text" class="form-control form-control-sm bg-light" readonly="1"
-                       t-att-value="props.approval.state_field_name"/>
+                       t-on-change="(ev) => props.approval.name = ev.target.value"/>
             </div>
 
             <!-- Conditions / Required Domain -->
             <div class="mb-3">
-                <label class="form-label text-secondary small fw-bold">Condition Domain</label>
+                <label class="form-label text-secondary small fw-bold">Apply Condition Domain</label>
                 <input type="text" class="form-control form-control-sm font-monospace" style="font-size:0.75rem;"
                        t-att-value="props.approval.required_domain"
-                       t-on-change="(ev) => this.updateApproval('required_domain', ev.target.value)"/>
+                       t-on-change="(ev) => props.approval.required_domain = ev.target.value"/>
             </div>
 
-            <!-- Allowed Groups Selection -->
-            <div class="mb-3 border-top pt-3">
-                <label class="form-label text-secondary small fw-bold">Authorized Groups</label>
-                <div class="overflow-auto border rounded p-2 bg-light" style="max-height: 150px;">
-                    <t t-foreach="props.groups" t-as="group" t-key="group.id">
-                        <div class="form-check mb-1">
-                            <input type="checkbox" class="form-check-input"
-                                   t-att-id="'app_group_' + group.id"
-                                   t-att-checked="(props.approval.group_ids || []).includes(group.id)"
-                                   t-on-change="() => this.updateApproval('group_ids', group.id)"/>
-                            <label class="form-check-label text-dark small" t-att-for="'app_group_' + group.id">
-                                <t t-esc="group.display_name"/>
-                            </label>
+            <!-- Multi Step Rule Config -->
+            <div class="border-top pt-3 mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="fw-bold text-secondary small mb-0">Approval Sequence Steps</label>
+                    <button class="btn btn-outline-primary btn-xs py-0 px-2" t-on-click="addStep">+ Add Step</button>
+                </div>
+
+                <div class="steps-list d-flex flex-column gap-2 mb-3">
+                    <t t-foreach="state.steps" t-as="step" t-key="step_index">
+                        <div class="border rounded p-2 bg-light position-relative">
+                            <!-- Delete Step Button -->
+                            <button class="btn btn-xs text-danger position-absolute top-0 end-0 m-1 border-0 bg-transparent"
+                                    t-on-click="() => this.removeStep(step_index)">✕</button>
+
+                            <!-- Step Name -->
+                            <div class="mb-2">
+                                <label class="form-label text-muted small fw-bold mb-0">Step Name</label>
+                                <input type="text" class="form-control form-control-sm py-0 px-1"
+                                       t-att-value="step.name"
+                                       t-on-change="(ev) => this.updateStepVal(step_index, 'name', ev.target.value)"/>
+                            </div>
+
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <label class="form-label text-muted small fw-bold mb-0">Sequence Order</label>
+                                    <input type="number" class="form-control form-control-sm py-0 px-1"
+                                           t-att-value="step.sequence"
+                                           t-on-change="(ev) => this.updateStepVal(step_index, 'sequence', ev.target.value)"/>
+                                </div>
+                                <div class="col-6 d-flex align-items-end justify-content-center">
+                                    <div class="form-check pb-1 mb-0">
+                                        <input type="checkbox" class="form-check-input"
+                                               t-att-id="'step_exc_' + step_index"
+                                               t-att-checked="step.exclusive"
+                                               t-on-change="(ev) => this.updateStepVal(step_index, 'exclusive', ev.target.checked)"/>
+                                        <label class="form-check-label text-muted small fw-bold" t-att-for="'step_exc_' + step_index">Exclusive</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Groups for this Step -->
+                            <div>
+                                <label class="form-label text-muted small fw-bold mb-1 d-block">Authorized Groups</label>
+                                <div class="border rounded bg-white p-1 overflow-auto" style="max-height: 80px;">
+                                    <t t-foreach="props.groups" t-as="group" t-key="group.id">
+                                        <div class="form-check small py-0 my-0">
+                                            <input type="checkbox" class="form-check-input"
+                                                   t-att-id="'step_g_' + step_index + '_' + group.id"
+                                                   t-att-checked="step.group_ids.includes(group.id)"
+                                                   t-on-change="() => this.toggleGroupInStep(step_index, group.id)"/>
+                                            <label class="form-check-label text-dark" t-att-for="'step_g_' + step_index + '_' + group.id" style="font-size: 0.75rem;">
+                                                <t t-esc="group.name || group.display_name"/>
+                                            </label>
+                                        </div>
+                                    </t>
+                                </div>
+                            </div>
                         </div>
                     </t>
                 </div>
             </div>
+
+            <!-- Save Action Button -->
+            <button class="btn btn-sm btn-primary w-100" t-on-click="saveApprovalConfig">Save Approval Settings</button>
         </div>
     </t>
 </templates>

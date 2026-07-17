@@ -180,16 +180,39 @@ class StudioCeController(http.Controller):
             # Approvals
             approvals_data = []
             for app in request.env['studio.ce.approval'].search([('model_name', '=', model_name), ('active', '=', True)]):
+                steps = []
+                for step in app.rule_ids:
+                    steps.append({
+                        'id': step.id,
+                        'name': step.name,
+                        'sequence': step.sequence,
+                        'exclusive': step.exclusive,
+                        'user_ids': step.user_ids.ids,
+                        'group_ids': step.group_ids.ids,
+                        'notify_user_ids': step.notify_user_ids.ids,
+                    })
                 approvals_data.append({
                     'id': app.id,
                     'name': app.name,
-                    'min_approvals': app.min_approvals,
-                    'user_ids': app.user_ids.ids,
-                    'group_ids': app.group_ids.ids,
-                    'state_field_name': app.state_field_id.name or 'x_studio_approval_state',
-                    'approved_value': app.approved_value,
-                    'refused_value': app.refused_value,
+                    'button_name': app.button_name,
                     'required_domain': app.required_domain,
+                    'steps': steps,
+                })
+
+            # Record Rules
+            rules_data = []
+            for rule in request.env['ir.rule'].search([('model_id.model', '=', model_name)]):
+                rules_data.append({
+                    'id': rule.id,
+                    'name': rule.name,
+                    'domain_force': rule.domain_force or '[]',
+                    'perm_read': rule.perm_read,
+                    'perm_write': rule.perm_write,
+                    'perm_create': rule.perm_create,
+                    'perm_unlink': rule.perm_unlink,
+                    'active': rule.active,
+                    'is_studio_ce': rule.is_studio_ce,
+                    'group_ids': rule.groups.ids,
                 })
 
             return {
@@ -199,6 +222,7 @@ class StudioCeController(http.Controller):
                 'groups': groups_data,
                 'automations': automations_data,
                 'approvals': approvals_data,
+                'record_rules': rules_data,
             }
         except Exception as e:
             import logging
@@ -474,7 +498,7 @@ class StudioCeController(http.Controller):
         return {'id': new_auto.id, 'name': new_auto.name}
 
     @http.route('/web_studio_ce/create_model', type='json', auth='user')
-    def create_model(self, model_label, model_name, parent_menu_id=None):
+    def create_model(self, model_label, model_name, parent_menu_id=None, features=None, app_icon=None, app_color=None):
         if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
             return {'error': 'Access Denied.'}
 
@@ -485,36 +509,204 @@ class StudioCeController(http.Controller):
         if existing:
             return {'error': f'Model {model_name} already exists.'}
 
+        features = features or []
+
         # Create model
-        model = request.env['ir.model'].create({
+        model_vals = {
             'name': model_label,
             'model': model_name,
             'state': 'manual',
             'is_studio_ce': True,
-        })
+        }
+        
+        ir_model_model = request.env['ir.model']
+        if 'is_mail_thread' in ir_model_model._fields and 'chatter' in features:
+            model_vals['is_mail_thread'] = True
+        if 'is_mail_activity' in ir_model_model._fields and 'chatter' in features:
+            model_vals['is_mail_activity'] = True
 
-        # Setup models & init registry to instantiate the table and dynamic fields (like x_name)
+        model = ir_model_model.create(model_vals)
+
+        # Setup models & init registry to instantiate the table
         self._reload_registry(request.env, model_name)
 
-        # Create default Form View
+        # Log creation
+        request.env['studio.ce.log'].create({
+            'name': f"Created model '{model_name}' ({model_label})",
+            'model_name': model_name,
+            'log_type': 'menu_create',
+            'target_model': 'ir.model',
+            'target_res_id': model.id,
+        })
+
+        # Add fields for suggested features
+        fields_to_create = []
+        
+        # Always create x_name field
+        fields_to_create.append({
+            'name': 'x_name', 'field_description': 'Name', 'ttype': 'char', 'required': True
+        })
+
+        if 'archiving' in features:
+            fields_to_create.append({
+                'name': 'active', 'field_description': 'Active', 'ttype': 'boolean'
+            })
+        if 'sorting' in features:
+            fields_to_create.append({
+                'name': 'x_sequence', 'field_description': 'Sequence', 'ttype': 'integer'
+            })
+        if 'company' in features:
+            fields_to_create.append({
+                'name': 'x_company_id', 'field_description': 'Company', 'ttype': 'many2one', 'relation': 'res.company'
+            })
+        if 'monetary' in features:
+            fields_to_create.append({
+                'name': 'x_currency_id', 'field_description': 'Currency', 'ttype': 'many2one', 'relation': 'res.currency'
+            })
+            fields_to_create.append({
+                'name': 'x_amount', 'field_description': 'Amount', 'ttype': 'monetary'
+            })
+        if 'notes' in features:
+            fields_to_create.append({
+                'name': 'x_notes', 'field_description': 'Internal Notes', 'ttype': 'html'
+            })
+        if 'picture' in features:
+            fields_to_create.append({
+                'name': 'x_image', 'field_description': 'Image', 'ttype': 'binary'
+            })
+        if 'tags' in features:
+            fields_to_create.append({
+                'name': 'x_tag_ids', 'field_description': 'Tags', 'ttype': 'many2many', 'relation': 'res.partner.category'
+            })
+        if 'user' in features:
+            fields_to_create.append({
+                'name': 'x_user_id', 'field_description': 'Assigned User', 'ttype': 'many2one', 'relation': 'res.users'
+            })
+        if 'contact' in features:
+            fields_to_create.append({
+                'name': 'x_partner_id', 'field_description': 'Contact', 'ttype': 'many2one', 'relation': 'res.partner'
+            })
+        if 'date_range' in features:
+            fields_to_create.append({
+                'name': 'x_date_start', 'field_description': 'Start Date', 'ttype': 'date'
+            })
+            fields_to_create.append({
+                'name': 'x_date_end', 'field_description': 'End Date', 'ttype': 'date'
+            })
+        if 'calendar' in features:
+            fields_to_create.append({
+                'name': 'x_date', 'field_description': 'Date & Time', 'ttype': 'datetime'
+            })
+
+        for f in fields_to_create:
+            f_vals = {
+                'name': f['name'],
+                'field_description': f['field_description'],
+                'ttype': f['ttype'],
+                'model_id': model.id,
+                'model': model_name,
+                'state': 'manual',
+                'is_studio_ce': True,
+            }
+            if 'relation' in f:
+                f_vals['relation'] = f['relation']
+            if 'required' in f:
+                f_vals['required'] = f['required']
+            request.env['ir.model.fields'].create(f_vals)
+
+        # Reload registry to instantiate all fields
+        self._reload_registry(request.env, model_name)
+
+        # Construct Form View Arch based on active features
+        form_fields_xml = ['<field name="x_name"/>']
+        if 'sorting' in features:
+            form_fields_xml.append('<field name="x_sequence" invisible="1"/>')
+        if 'user' in features:
+            form_fields_xml.append('<field name="x_user_id"/>')
+        if 'contact' in features:
+            form_fields_xml.append('<field name="x_partner_id"/>')
+        if 'company' in features:
+            form_fields_xml.append('<field name="x_company_id"/>')
+        
+        form_right_xml = []
+        if 'monetary' in features:
+            form_right_xml.append('<field name="x_currency_id" invisible="1"/>')
+            form_right_xml.append('<field name="x_amount"/>')
+        if 'date_range' in features:
+            form_right_xml.append('<field name="x_date_start"/>')
+            form_right_xml.append('<field name="x_date_end"/>')
+        if 'calendar' in features:
+            form_right_xml.append('<field name="x_date"/>')
+        if 'tags' in features:
+            form_right_xml.append('<field name="x_tag_ids" widget="many2many_tags"/>')
+        if 'picture' in features:
+            form_right_xml.append('<field name="x_image" widget="image" class="oe_avatar"/>')
+
+        form_body = f"""
+            <sheet>
+                <div class="oe_title" t-if="not { 'picture' in features }">
+                    <label for="x_name"/>
+                    <h1><field name="x_name" placeholder="e.g. New Record"/></h1>
+                </div>
+                <group>
+                    <group>
+                        {''.join(form_fields_xml)}
+                    </group>
+                    <group>
+                        {''.join(form_right_xml)}
+                    </group>
+                </group>
+        """
+        if 'notes' in features:
+            form_body += """
+                <notebook>
+                    <page string="Notes" name="notes">
+                        <field name="x_notes" placeholder="Internal Notes..."/>
+                    </page>
+                </notebook>
+            """
+        form_body += "</sheet>"
+        
+        if 'chatter' in features:
+            form_body += """
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            """
+
+        form_arch = f'<form string="{model_label}">{form_body}</form>'
+
+        # Create Views
         form_view = request.env['ir.ui.view'].create({
             'name': f'{model_name}.form',
             'model': model_name,
             'type': 'form',
             'is_studio_ce': True,
-            'arch': f'<form string="{model_label}"><sheet><group><field name="x_name"/></group></sheet></form>'
+            'arch': form_arch
         })
 
-        # Create default List View (Using <list> instead of <tree>)
+        # List View (using <list> tag)
+        list_fields = ['<field name="x_name"/>']
+        if 'user' in features:
+            list_fields.append('<field name="x_user_id" widget="many2one_avatar_user"/>')
+        if 'contact' in features:
+            list_fields.append('<field name="x_partner_id"/>')
+        if 'tags' in features:
+            list_fields.append('<field name="x_tag_ids" widget="many2many_tags"/>')
+        if 'calendar' in features:
+            list_fields.append('<field name="x_date"/>')
+        
+        list_arch = f'<list string="{model_label}">{"".join(list_fields)}</list>'
         list_view = request.env['ir.ui.view'].create({
             'name': f'{model_name}.list',
             'model': model_name,
             'type': 'list',
             'is_studio_ce': True,
-            'arch': f'<list string="{model_label}"><field name="x_name"/></list>'
+            'arch': list_arch
         })
 
-        # Create default Search View
         search_view = request.env['ir.ui.view'].create({
             'name': f'{model_name}.search',
             'model': model_name,
@@ -523,7 +715,7 @@ class StudioCeController(http.Controller):
             'arch': f'<search string="{model_label}"><field name="x_name"/></search>'
         })
 
-        # Create Window Action (Use view_mode = 'list,form')
+        # Action (Use view_mode = 'list,form' conforming to list rule)
         action = request.env['ir.actions.act_window'].create({
             'name': model_label,
             'res_model': model_name,
@@ -540,7 +732,12 @@ class StudioCeController(http.Controller):
         if parent_menu_id:
             menu_vals['parent_id'] = parent_menu_id
         else:
-            menu_vals['parent_id'] = request.env.ref('web_studio_ce.menu_studio_ce_root').id
+            # Create a root menu if no parent is provided
+            root_menu = request.env['ir.ui.menu'].create({
+                'name': model_label,
+                'is_studio_ce': True,
+            })
+            menu_vals['parent_id'] = root_menu.id
 
         menu = request.env['ir.ui.menu'].create(menu_vals)
 
@@ -1184,21 +1381,28 @@ class StudioCeController(http.Controller):
         ])
         approvals_data = []
         for app in approvals:
+            steps = []
+            for step in app.rule_ids:
+                steps.append({
+                    'id': step.id,
+                    'name': step.name,
+                    'sequence': step.sequence,
+                    'exclusive': step.exclusive,
+                    'user_ids': step.user_ids.ids,
+                    'group_ids': step.group_ids.ids,
+                    'notify_user_ids': step.notify_user_ids.ids,
+                })
             approvals_data.append({
                 'id': app.id,
                 'name': app.name,
-                'min_approvals': app.min_approvals,
-                'user_ids': app.user_ids.ids,
-                'group_ids': app.group_ids.ids,
-                'state_field_name': app.state_field_id.name or 'x_studio_approval_state',
-                'approved_value': app.approved_value,
-                'refused_value': app.refused_value,
+                'button_name': app.button_name,
                 'required_domain': app.required_domain,
+                'steps': steps,
             })
         return {'approvals': approvals_data}
 
     @http.route('/web_studio_ce/save_approval', type='json', auth='user')
-    def save_approval(self, model_name, name, min_approvals=1, user_ids=None, group_ids=None, state_field_name='x_studio_approval_state', approved_value='approved', refused_value='refused', required_domain='[]', approval_id=None):
+    def save_approval(self, model_name, name, button_name, required_domain='[]', steps_data=None, approval_id=None):
         if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
             return {'error': 'Access Denied.'}
 
@@ -1206,36 +1410,11 @@ class StudioCeController(http.Controller):
         if not model:
             return {'error': f'Model {model_name} not found.'}
 
-        # Find or create state field
-        field_name = state_field_name or 'x_studio_approval_state'
-        field = request.env['ir.model.fields'].search([
-            ('model_id', '=', model.id),
-            ('name', '=', field_name)
-        ], limit=1)
-        if not field:
-            field = request.env['ir.model.fields'].create({
-                'name': field_name,
-                'model_id': model.id,
-                'model': model_name,
-                'field_description': 'Approval State',
-                'ttype': 'selection',
-                'selection': str([('draft', 'Draft'), ('to_approve', 'To Approve'), ('approved', 'Approved'), ('refused', 'Refused')]),
-                'state': 'manual',
-                'is_studio_ce': True,
-            })
-            # Setup & init registry
-            self._reload_registry(request.env, model_name)
-
         vals = {
             'name': name,
             'model_id': model.id,
-            'min_approvals': int(min_approvals),
-            'state_field_id': field.id,
-            'approved_value': approved_value,
-            'refused_value': refused_value,
+            'button_name': button_name,
             'required_domain': required_domain,
-            'user_ids': [(6, 0, user_ids or [])],
-            'group_ids': [(6, 0, group_ids or [])],
         }
 
         if approval_id:
@@ -1244,38 +1423,38 @@ class StudioCeController(http.Controller):
                 approval.write(vals)
         else:
             approval = request.env['studio.ce.approval'].create(vals)
+            # Log approval creation
+            request.env['studio.ce.log'].create({
+                'name': f"Created approval rule for '{button_name}' on model '{model_name}'",
+                'model_name': model_name,
+                'log_type': 'approval_create',
+                'target_model': 'studio.ce.approval',
+                'target_res_id': approval.id,
+            })
 
-        # Inject buttons into the primary form view of the model
-        form_view = request.env['ir.ui.view'].search([
-            ('model', '=', model_name),
-            ('type', '=', 'form'),
-            ('inherit_id', '=', False)
-        ], limit=1)
-        if form_view:
-            arch_str = ""
-            try:
-                if hasattr(form_view, 'get_combined_arch'):
-                    arch_str = form_view.get_combined_arch()
+        # Save Steps
+        if steps_data is not None:
+            existing_step_ids = approval.rule_ids.ids
+            input_step_ids = [s.get('id') for s in steps_data if s.get('id')]
+            to_delete = set(existing_step_ids) - set(input_step_ids)
+            if to_delete:
+                request.env['studio.ce.approval.rule'].browse(list(to_delete)).unlink()
+
+            for step_val in steps_data:
+                s_id = step_val.get('id')
+                s_vals = {
+                    'approval_id': approval.id,
+                    'name': step_val.get('name', 'Step'),
+                    'sequence': int(step_val.get('sequence', 10)),
+                    'exclusive': bool(step_val.get('exclusive', False)),
+                    'user_ids': [(6, 0, step_val.get('user_ids', []))],
+                    'group_ids': [(6, 0, step_val.get('group_ids', []))],
+                    'notify_user_ids': [(6, 0, step_val.get('notify_user_ids', []))],
+                }
+                if s_id:
+                    request.env['studio.ce.approval.rule'].browse(s_id).write(s_vals)
                 else:
-                    arch_tree = form_view._get_combined_arch()
-                    arch_str = etree.tostring(arch_tree, encoding='unicode')
-            except Exception:
-                arch_str = form_view.arch or ""
-
-            has_header = '<header>' in arch_str or '<header ' in arch_str
-
-            buttons_xml = f"""
-                <button name="action_studio_approve" string="Approve" type="object" class="btn-primary" invisible="{field_name} != 'to_approve'"/>
-                <button name="action_studio_reject" string="Reject" type="object" class="btn-secondary" invisible="{field_name} != 'to_approve'"/>
-                <field name="{field_name}" widget="statusbar" statusbar_visible="draft,to_approve,approved,refused"/>
-            """
-
-            if has_header:
-                modification_xml = f'<xpath expr="//header" position="inside">{buttons_xml}</xpath>'
-            else:
-                modification_xml = f'<xpath expr="//sheet" position="before"><header>{buttons_xml}</header></xpath>'
-
-            self.edit_view(view_id=form_view.id, xpath_expr="//form", modification_xml=modification_xml)
+                    request.env['studio.ce.approval.rule'].create(s_vals)
 
         return {'id': approval.id, 'name': approval.name}
 
@@ -1289,4 +1468,67 @@ class StudioCeController(http.Controller):
             approval.active = False
             return {'status': 'success'}
         return {'error': 'Approval not found.'}
+
+    @http.route('/web_studio_ce/save_record_rule', type='json', auth='user')
+    def save_record_rule(self, model_name, name, domain_force='[]', perm_read=True, perm_write=True, perm_create=True, perm_unlink=True, group_ids=None, rule_id=None):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        model = request.env['ir.model'].search([('model', '=', model_name)], limit=1)
+        if not model:
+            return {'error': f'Model {model_name} not found.'}
+
+        vals = {
+            'name': name,
+            'model_id': model.id,
+            'domain_force': domain_force,
+            'perm_read': bool(perm_read),
+            'perm_write': bool(perm_write),
+            'perm_create': bool(perm_create),
+            'perm_unlink': bool(perm_unlink),
+            'groups': [(6, 0, group_ids or [])],
+            'is_studio_ce': True,
+        }
+
+        if rule_id:
+            rule = request.env['ir.rule'].browse(rule_id)
+            if rule.exists():
+                rule.write(vals)
+        else:
+            rule = request.env['ir.rule'].create(vals)
+            # Log rule creation
+            request.env['studio.ce.log'].create({
+                'name': f"Created record security rule '{name}' on model '{model_name}'",
+                'model_name': model_name,
+                'log_type': 'rule_create',
+                'target_model': 'ir.rule',
+                'target_res_id': rule.id,
+            })
+
+        return {'id': rule.id, 'name': rule.name}
+
+    @http.route('/web_studio_ce/delete_record_rule', type='json', auth='user')
+    def delete_record_rule(self, rule_id):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        rule = request.env['ir.rule'].browse(rule_id)
+        if rule.exists():
+            rule.unlink()
+            return {'status': 'success'}
+        return {'error': 'Record rule not found.'}
+
+    @http.route('/web_studio_ce/trigger_webhook/<string:webhook_name>', type='json', auth='public', csrf=False)
+    def trigger_webhook(self, webhook_name, **kwargs):
+        rule = request.env['base.automation'].sudo().search([('name', '=', webhook_name), ('trigger', '=', 'on_webhook')], limit=1)
+        if not rule:
+            return {'error': f'Webhook {webhook_name} not found or inactive.'}
+        
+        action = rule.action_server_ids[0] if rule.action_server_ids else False
+        if action:
+            ctx = dict(request.env.context, webhook_payload=request.jsonrequest)
+            action.with_context(ctx).sudo().run()
+            return {'status': 'success'}
+        return {'error': 'No server action linked to this webhook.'}
+
 

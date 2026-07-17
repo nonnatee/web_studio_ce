@@ -25,7 +25,18 @@
                     <option value="on_create_or_write">On Creation &amp; Update (on_create_or_write)</option>
                     <option value="on_unlink">On Deletion (on_unlink)</option>
                     <option value="on_time">Based on date field (on_time)</option>
+                    <option value="on_webhook">Incoming Webhook (on_webhook)</option>
                 </select>
+            </div>
+
+            <!-- Webhook Incoming URL Info -->
+            <div t-if="props.rule.trigger === 'on_webhook'" class="mb-3 border rounded p-2 bg-light">
+                <label class="form-label text-secondary small fw-bold d-block">Webhook Trigger URL</label>
+                <div class="input-group input-group-sm">
+                    <input type="text" class="form-control font-monospace" style="font-size:0.7rem;" readonly="1"
+                           t-att-value="'/web_studio_ce/trigger_webhook/' + (props.rule.name ? props.rule.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() : 'rule_' + props.rule.id)"/>
+                </div>
+                <small class="text-muted" style="font-size:0.7rem;">Send POST JSON payload to this endpoint. Access context via <code>webhook_payload</code> in Python code.</small>
             </div>
 
             <!-- Date-based Triggers Config -->
@@ -84,6 +95,8 @@
                         t-on-change="(ev) => this.updateRule('action_state', ev.target.value)">
                     <option value="code">Execute Python Code</option>
                     <option value="next_activity">Create Next Activity</option>
+                    <option value="mail_post_autofollow">Send Email (mail_post_autofollow)</option>
+                    <option value="webhook">Send Outbound Webhook</option>
                 </select>
 
                 <!-- Python Code block -->
@@ -125,6 +138,35 @@
                                 <option value="months">Months</option>
                             </select>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Email block -->
+                <div t-if="props.rule.action_state === 'mail_post_autofollow'" class="border rounded p-2 bg-light">
+                    <label class="form-label text-secondary small fw-bold">Email Template ID</label>
+                    <input type="number" class="form-control form-control-sm mb-2" placeholder="Template Record ID"
+                           t-att-value="props.rule.template_id"
+                           t-on-change="(ev) => this.updateRule('template_id', ev.target.value)"/>
+                </div>
+
+                <!-- Outbound Webhook block -->
+                <div t-if="props.rule.action_state === 'webhook'" class="border rounded p-2 bg-light">
+                    <div class="mb-2">
+                        <label class="form-label text-secondary small fw-bold">Webhook Destination URL</label>
+                        <input type="text" class="form-control form-control-sm font-monospace" style="font-size:0.7rem;" placeholder="https://api.example.com/endpoint"
+                               t-att-value="props.rule.webhook_url"
+                               t-on-change="(ev) => this.updateRule('webhook_url', ev.target.value)"/>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label text-secondary small fw-bold">HTTP Method</label>
+                        <select class="form-select form-select-sm"
+                                t-att-value="props.rule.webhook_method || 'POST'"
+                                t-on-change="(ev) => this.updateRule('webhook_method', ev.target.value)">
+                            <option value="POST">POST</option>
+                            <option value="PUT">PUT</option>
+                            <option value="PATCH">PATCH</option>
+                            <option value="GET">GET</option>
+                        </select>
                     </div>
                 </div>
             </div>
