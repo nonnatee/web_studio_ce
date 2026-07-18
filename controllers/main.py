@@ -920,11 +920,18 @@ class StudioCeController(http.Controller):
         menus = request.env['ir.ui.menu'].search([('parent_id', '=', False)])
 
         def build_tree(menu):
+            action_id = False
+            if menu.action:
+                try:
+                    action_id = int(menu.action.split(',')[1])
+                except Exception:
+                    pass
             return {
                 'id': menu.id,
                 'name': menu.name,
                 'sequence': menu.sequence,
                 'parent_id': menu.parent_id.id if menu.parent_id else False,
+                'action_id': action_id,
                 'children': [build_tree(child) for child in menu.child_id.sorted('sequence')],
             }
 
@@ -942,6 +949,8 @@ class StudioCeController(http.Controller):
         }
         if action_id:
             vals['action'] = f'ir.actions.act_window,{action_id}'
+        else:
+            vals['action'] = False
 
         if menu_id:
             menu = request.env['ir.ui.menu'].browse(menu_id)
@@ -952,6 +961,17 @@ class StudioCeController(http.Controller):
             vals['is_studio_ce'] = True
             new_menu = request.env['ir.ui.menu'].create(vals)
             return {'id': new_menu.id}
+
+    @http.route('/web_studio_ce/delete_menu', type='json', auth='user')
+    def delete_menu(self, menu_id):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        menu = request.env['ir.ui.menu'].browse(menu_id)
+        if menu.exists():
+            menu.unlink()
+            return {'status': 'success'}
+        return {'error': 'Menu not found.'}
 
     @http.route('/web_studio_ce/update_field_properties', type='json', auth='user')
     def update_field_properties(self, field_name, model_name, vals):
@@ -1225,6 +1245,53 @@ class StudioCeController(http.Controller):
                     latest_log.name = f"Relocated field '{field_name}' {position} '{target_field_name or 'sheet'}'"
                 else:
                     latest_log.name = f"Inserted field '{field_name}' {position} '{target_field_name or 'sheet'}'"
+        return res
+
+    @http.route('/web_studio_ce/insert_smart_button', type='json', auth='user')
+    def insert_smart_button(self, view_id, target_xpath=None, position='inside'):
+        if not request.env.user.has_group('web_studio_ce.group_studio_ce'):
+            return {'error': 'Access Denied.'}
+
+        target_view = request.env['ir.ui.view'].browse(view_id)
+        if not target_view.exists():
+            return {'error': 'Target view not found.'}
+
+        try:
+            if hasattr(target_view, 'get_combined_arch'):
+                combined_arch = target_view.get_combined_arch()
+            else:
+                from lxml import etree
+                arch_tree = target_view._get_combined_arch()
+                combined_arch = etree.tostring(arch_tree, encoding='unicode')
+            
+            has_button_box = 'name="button_box"' in combined_arch or "name='button_box'" in combined_arch
+        except Exception:
+            has_button_box = False
+
+        from lxml import etree
+        modification_xml = ""
+        button_xml = '<button class="oe_stat_button" type="action" icon="fa-star" string="Smart Button"/>'
+
+        if not has_button_box:
+            button_box_xml = f'<div class="oe_button_box" name="button_box">{button_xml}</div>'
+            modification_xml = f'<xpath expr="//sheet" position="inside">{button_box_xml}</xpath>'
+            xpath_expr = "//sheet"
+        else:
+            if target_xpath and 'button_box' in target_xpath:
+                modification_xml = f'<xpath expr="{target_xpath}" position="{position}">{button_xml}</xpath>'
+                xpath_expr = target_xpath
+            else:
+                modification_xml = f'<xpath expr="//div[@name=\'button_box\']" position="inside">{button_xml}</xpath>'
+                xpath_expr = "//div[@name='button_box']"
+
+        res = self.edit_view(view_id=view_id, xpath_expr=xpath_expr, modification_xml=modification_xml)
+        if 'error' not in res:
+            latest_log = request.env['studio.ce.log'].search([
+                ('view_id', '=', target_view.id),
+                ('log_type', '=', 'view_modify')
+            ], limit=1, order='id desc')
+            if latest_log:
+                latest_log.name = "Inserted Smart Button into form header"
         return res
 
     @http.route('/web_studio_ce/toggle_field_visibility', type='json', auth='user')

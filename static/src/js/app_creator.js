@@ -13,6 +13,20 @@ export class AppCreator extends Component {
             iconSymbol: "⚙️",
             loading: false,
             error: null,
+            features: {
+                chatter: true,
+                archiving: false,
+                sorting: false,
+                company: false,
+                monetary: false,
+                notes: false,
+                picture: false,
+                tags: false,
+                user: false,
+                contact: false,
+                date_range: false,
+                calendar: false,
+            }
         });
 
         this.symbols = ["⚙️", "📈", "👤", "🛒", "✉️", "📦", "💼", "🛠️", "📅", "💡", "💰", "📁"];
@@ -33,10 +47,15 @@ export class AppCreator extends Component {
         this.state.loading = true;
         this.state.error = null;
 
+        const activeFeatures = Object.entries(this.state.features)
+            .filter(([k, v]) => v)
+            .map(([k, v]) => k);
+
         try {
             const data = await rpc("/web_studio_ce/create_model", {
                 model_label: this.state.appName,
                 model_name: techName,
+                features: activeFeatures,
             });
 
             if (data.error) {

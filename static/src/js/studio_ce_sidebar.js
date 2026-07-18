@@ -17,10 +17,12 @@ export class StudioCeSidebar extends Component {
             activeFilter: "all",
             reports: [],
             selectedReportId: null,
+            windowActions: [],
         });
 
         onWillStart(async () => {
             await this.loadReports();
+            await this.loadWindowActions();
         });
 
         onWillUpdateProps(async (nextProps) => {
@@ -67,6 +69,31 @@ export class StudioCeSidebar extends Component {
             label: "New Group"
         }));
         ev.dataTransfer.effectAllowed = "copyMove";
+    }
+
+    onDragStartNewSmartButton(ev) {
+        ev.dataTransfer.setData("text/plain", JSON.stringify({
+            type: "new_button",
+            label: "Smart Button"
+        }));
+        ev.dataTransfer.effectAllowed = "copyMove";
+    }
+
+    async loadWindowActions() {
+        try {
+            const actions = await rpc("/web/dataset/call_kw/ir.actions.act_window/search_read", {
+                model: "ir.actions.act_window",
+                method: "search_read",
+                args: [[]],
+                kwargs: {
+                    fields: ["id", "name"],
+                    order: "name asc",
+                }
+            });
+            this.state.windowActions = actions || [];
+        } catch (err) {
+            console.error("Failed to load actions", err);
+        }
     }
 
     onDragStartNewField(ev, type) {

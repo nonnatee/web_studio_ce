@@ -10,6 +10,7 @@ import { SecurityEditor } from "./security_editor";
 import { StudioCeSidebar } from "./studio_ce_sidebar";
 import { StudioCeCanvas } from "./studio_ce_canvas";
 import { ReportEditor } from "./report_editor";
+import { MenuEditor } from "./menu_editor";
 
 export class StudioCeEditor extends Component {
     setup() {
@@ -557,5 +558,5 @@ export class StudioCeEditor extends Component {
 }
 
 StudioCeEditor.template = "web_studio_ce.StudioCeEditor";
-StudioCeEditor.components = { StudioCeDocsPanel, AppCreator, SecurityEditor, StudioCeSidebar, StudioCeCanvas, ReportEditor };
+StudioCeEditor.components = { StudioCeDocsPanel, AppCreator, SecurityEditor, StudioCeSidebar, StudioCeCanvas, ReportEditor, MenuEditor };
 registry.category("actions").add("web_studio_ce.editor_action", StudioCeEditor);

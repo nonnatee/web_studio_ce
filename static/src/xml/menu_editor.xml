@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="web_studio_ce.MenuEditor" owl="1">
+        <div class="o_menu_editor container-fluid h-100 p-0 d-flex flex-column bg-light">
+            <!-- Header -->
+            <div class="o_menu_editor_header bg-white border-bottom p-3 d-flex justify-content-between align-items-center rounded shadow-sm mb-3">
+                <div>
+                    <h4 class="fw-bold text-dark mb-1">🌿 Hierarchical Menu Editor</h4>
+                    <p class="text-muted small mb-0">Reorder, rename, or structure navigation menus across your application.</p>
+                </div>
+                <button class="btn btn-primary btn-sm d-flex align-items-center gap-1" t-on-click="initNewMenu">
+                    <span>➕</span> Add Menu Item
+                </button>
+            </div>
+
+            <!-- Loader / Errors -->
+            <div t-if="state.loading" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+            <div t-if="state.error" class="alert alert-danger mx-3" t-esc="state.error"/>
+
+            <!-- Main Split Panels -->
+            <div t-if="!state.loading" class="d-flex flex-grow-1 w-100 overflow-hidden px-3 pb-3 gap-3">
+                
+                <!-- Left Panel: Menu Tree -->
+                <div class="flex-grow-1 bg-white border rounded shadow-sm p-3 overflow-auto">
+                    <h5 class="fw-bold mb-3 border-bottom pb-2 text-secondary">Menu Hierarchy</h5>
+                    <t t-if="state.menuTree &amp;&amp; state.menuTree.length > 0">
+                        <t t-foreach="state.menuTree" t-as="menu" t-key="menu.id">
+                            <t t-call="web_studio_ce.MenuNode">
+                                <t t-set="menu" t-value="menu"/>
+                            </t>
+                        </t>
+                    </t>
+                    <t t-else="">
+                        <div class="text-center text-muted py-5">
+                            <span class="fs-1">📂</span>
+                            <p>No navigation menus found.</p>
+                        </div>
+                    </t>
+                </div>
+
+                <!-- Right Panel: Properties / Setup Form -->
+                <div class="bg-white border rounded shadow-sm p-3 overflow-auto" style="width: 380px;">
+                    <t t-if="state.selectedMenu">
+                        <h5 class="fw-bold mb-3 border-bottom pb-2 text-secondary">
+                            <t t-if="state.isNew">✨ Create Menu Item</t>
+                            <t t-else="">⚙️ Menu Properties</t>
+                        </h5>
+
+                        <!-- Name -->
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small fw-bold">Menu Title</label>
+                            <input type="text" class="form-control form-control-sm" t-model="state.menuForm.name"/>
+                        </div>
+
+                        <!-- Parent Menu Selection -->
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small fw-bold">Parent Menu</label>
+                            <select class="form-select form-select-sm" t-model="state.menuForm.parent_id">
+                                <option t-value="null">-- Root Menu (No Parent) --</option>
+                                <t t-foreach="getFlatMenus()" t-as="flat" t-key="flat.id">
+                                    <!-- Prevent selecting itself as parent -->
+                                    <option t-if="flat.id !== state.menuForm.id" t-att-value="flat.id" t-esc="flat.name"/>
+                                </t>
+                            </select>
+                        </div>
+
+                        <!-- Sequence -->
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small fw-bold">Sequence (Ordering)</label>
+                            <input type="number" class="form-control form-control-sm" t-model="state.menuForm.sequence"/>
+                            <div class="form-text text-muted small">Lower numbers appear first.</div>
+                        </div>
+
+                        <!-- Action Target Selector -->
+                        <div class="mb-4">
+                            <label class="form-label text-secondary small fw-bold">Target Action (Window Action)</label>
+                            <select class="form-select form-select-sm" t-model="state.menuForm.action_id">
+                                <option t-value="null">-- No Action / Sub-menu Container --</option>
+                                <t t-foreach="state.windowActions" t-as="act" t-key="act.id">
+                                    <option t-att-value="act.id" t-esc="act.name"/>
+                                </t>
+                            </select>
+                        </div>
+
+                        <!-- Buttons Actions -->
+                        <div class="d-flex flex-column gap-2 mt-4 pt-3 border-top">
+                            <button class="btn btn-sm btn-primary w-100 py-2 fw-bold" t-on-click="saveMenu">💾 Save Menu</button>
+                            <button t-if="!state.isNew" class="btn btn-sm btn-outline-danger w-100 py-2" t-on-click="deleteMenu">🗑️ Delete Menu</button>
+                        </div>
+                    </t>
+                    <t t-else="">
+                        <div class="h-100 d-flex flex-column justify-content-center align-items-center text-muted py-5">
+                            <span class="fs-1 mb-2">👈</span>
+                            <p class="mb-0 text-center small">Select a menu from the hierarchy to modify its settings or create a new sub-menu.</p>
+                        </div>
+                    </t>
+                </div>
+
+            </div>
+        </div>
+    </t>
+
+    <!-- Recursive Node Node Template -->
+    <t t-name="web_studio_ce.MenuNode" owl="1">
+        <div class="o_menu_node py-2 px-3 my-1 rounded border-start border-3 transition-all"
+             t-att-class="state.selectedMenu &amp;&amp; state.selectedMenu.id === menu.id ? 'bg-primary text-white border-primary fw-bold shadow-sm' : 'bg-light text-dark border-secondary bg-opacity-75'"
+             t-on-click.stop="() => this.selectMenu(menu)"
+             style="cursor: pointer; font-size: 0.85rem; padding-left: 10px;">
+             📂 <t t-esc="menu.name"/> <small t-att-class="state.selectedMenu &amp;&amp; state.selectedMenu.id === menu.id ? 'text-white-50' : 'text-muted'" class="font-monospace ms-1" style="font-size:0.65rem;">(Seq: <t t-esc="menu.sequence"/>)</small>
+        </div>
+        <div t-if="menu.children &amp;&amp; menu.children.length > 0" class="ms-3 border-start ps-2">
+            <t t-foreach="menu.children" t-as="child" t-key="child.id">
+                <t t-call="web_studio_ce.MenuNode">
+                    <t t-set="menu" t-value="child"/>
+                </t>
+            </t>
+        </div>
+    </t>
+</templates>

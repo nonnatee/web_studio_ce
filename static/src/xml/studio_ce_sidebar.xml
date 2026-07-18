@@ -20,6 +20,9 @@
                     <button class="nav-link py-2" t-att-class="{ active: props.activeTab === 'approvals' }" t-on-click="() => props.onTabChange('approvals')">Approvals</button>
                 </li>
                 <li class="nav-item">
+                    <button class="nav-link py-2" t-att-class="{ active: props.activeTab === 'menu' }" t-on-click="() => props.onTabChange('menu')">Menu</button>
+                </li>
+                <li class="nav-item">
                     <button class="nav-link py-2" t-att-class="{ active: props.activeTab === 'logs' }" t-on-click="() => props.onTabChange('logs')">History</button>
                 </li>
             </ul>
@@ -37,6 +40,48 @@
 
                         <t t-if="props.selectedField.ttype === 'properties'">
                             <PropertiesBuilder fieldName="props.selectedField.name" modelName="props.modelName"/>
+                        </t>
+                        <t t-elif="props.selectedField.ttype === 'button'">
+                            <!-- Smart Button Label -->
+                            <div class="mb-3">
+                                <label class="form-label text-secondary small fw-bold">Button Label</label>
+                                <input type="text" class="form-control form-control-sm"
+                                       t-att-value="props.selectedField.field_description"
+                                       t-on-change="(ev) => this.overrideProperty('string', ev.target.value)"/>
+                            </div>
+                            <!-- Smart Button Icon Selector -->
+                            <div class="mb-3">
+                                <label class="form-label text-secondary small fw-bold">Button Icon</label>
+                                <select class="form-select form-select-sm"
+                                        t-att-value="props.selectedField.icon || 'fa-star'"
+                                        t-on-change="(ev) => this.overrideProperty('icon', ev.target.value)">
+                                    <option value="fa-star">⭐ Star (fa-star)</option>
+                                    <option value="fa-tasks">📋 Tasks (fa-tasks)</option>
+                                    <option value="fa-usd">💲 Currency (fa-usd)</option>
+                                    <option value="fa-shopping-cart">🛒 Orders (fa-shopping-cart)</option>
+                                    <option value="fa-envelope">✉️ Messages (fa-envelope)</option>
+                                    <option value="fa-users">👥 Partners (fa-users)</option>
+                                    <option value="fa-folder">📁 Records (fa-folder)</option>
+                                </select>
+                            </div>
+                            <!-- Smart Button Action Target -->
+                            <div class="mb-3">
+                                <label class="form-label text-secondary small fw-bold">Target Window Action</label>
+                                <select class="form-select form-select-sm"
+                                        t-att-value="props.selectedField.action_id || ''"
+                                        t-on-change="(ev) => this.overrideProperty('name', ev.target.value)">
+                                    <option value="">-- No Action / Custom --</option>
+                                    <t t-foreach="state.windowActions || []" t-as="act" t-key="act.id">
+                                        <option t-att-value="'%(' + act.id + ')d'" t-esc="act.name"/>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-secondary small fw-bold">XPath Location</label>
+                                <input type="text" class="form-control form-control-sm bg-light" readonly="1"
+                                       t-att-value="props.selectedField.name"/>
+                            </div>
+                            <button class="btn btn-sm btn-danger w-100 mt-3" t-on-click="removeFieldFromView">🗑️ Remove Smart Button</button>
                         </t>
                         <t t-elif="props.selectedField.ttype === 'group'">
                             <!-- Group Label Input -->
@@ -199,6 +244,12 @@
                                     t-on-dragstart="onDragStartNewGroup">
                                 <span class="o_drag_handle text-muted">⋮⋮</span>
                                 <span>🔳 Group Container</span>
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm text-start py-1 d-flex align-items-center gap-2"
+                                    draggable="true"
+                                    t-on-dragstart="onDragStartNewSmartButton">
+                                <span class="o_drag_handle text-muted">⋮⋮</span>
+                                <span>⭐ Smart Button</span>
                             </button>
                         </div>
 

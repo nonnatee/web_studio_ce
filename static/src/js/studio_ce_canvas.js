@@ -7,6 +7,7 @@ export class StudioCeCanvas extends Component {
         this.state = useState({
             blocks: [],
             selectedBlockId: null,
+            viewMode: "preview", // 'preview' or 'layout'
         });
 
         // Initialize design mode in shared config safely
@@ -118,6 +119,60 @@ export class StudioCeCanvas extends Component {
         return block.attrs.string || block.attrs.name || block.tag;
     }
 
+    get sheetChildren() {
+        const root = this.state.blocks[0];
+        if (!root) return [];
+        let list = [];
+        if (root.tag === "form") {
+            const sheet = root.children.find(c => c.tag === "sheet");
+            list = sheet ? sheet.children : root.children;
+        } else {
+            list = root.children || [];
+        }
+        return list.filter(c => {
+            if (c.tag === "div" && c.attrs.name === "button_box") return false;
+            if (c.tag === "button" && (c.attrs.class || "").includes("oe_stat_button")) return false;
+            return true;
+        });
+    }
+
+    get statButtons() {
+        const root = this.state.blocks[0];
+        if (!root) return [];
+        const buttons = [];
+        const findButtons = (node) => {
+            if (node.tag === "button" && (node.attrs.class || "").includes("oe_stat_button")) {
+                buttons.push(node);
+            }
+            if (node.children) {
+                node.children.forEach(findButtons);
+            }
+        };
+        findButtons(root);
+        return buttons;
+    }
+
+    get listFields() {
+        const root = this.state.blocks[0];
+        if (!root) return [];
+        if (root.tag === "list" || root.tag === "tree") {
+            return root.children.filter(c => c.tag === "field");
+        }
+        const fields = [];
+        const findFields = (node) => {
+            if (node.tag === "field") fields.push(node);
+            if (node.children) {
+                node.children.forEach(findFields);
+            }
+        };
+        findFields(root);
+        return fields;
+    }
+
+    hasSubGroups(block) {
+        return block.children && block.children.some(c => c.tag === "group");
+    }
+
     isContainer(block) {
         return ["sheet", "group", "notebook", "page", "form", "list", "tree", "kanban", "div", "header", "footer"].includes(block.tag);
     }
@@ -143,6 +198,15 @@ export class StudioCeCanvas extends Component {
                 readonly: block.attrs.readonly === "1" || block.attrs.readonly === "true",
             };
             this.props.onSelectField(fieldData);
+        } else if (block.tag === "button" && (block.attrs.class || "").includes("oe_stat_button")) {
+            this.props.onSelectField({
+                id: block.xpath,
+                name: block.xpath,
+                ttype: "button",
+                field_description: block.attrs.string || "Smart Button",
+                icon: block.attrs.icon || "fa-star",
+                action_id: block.attrs.name || "",
+            });
         } else {
             this.props.onSelectField({
                 id: block.xpath,
@@ -191,6 +255,22 @@ export class StudioCeCanvas extends Component {
         ev.currentTarget.classList.remove("o_studio_ce_drop_zone_active");
     }
 
+    async insertNewSmartButton(targetXpath, position) {
+        if (!this.props.view) return;
+        try {
+            await rpc("/web_studio_ce/insert_smart_button", {
+                view_id: this.props.view.id,
+                target_xpath: targetXpath,
+                position: position,
+            });
+            if (this.props.onViewChange) {
+                this.props.onViewChange(this.props.view.id);
+            }
+        } catch (err) {
+            console.error("Failed to insert smart button", err);
+        }
+    }
+
     async onBlockDrop(ev, targetBlock, position) {
         ev.preventDefault();
         ev.stopPropagation();
@@ -211,6 +291,8 @@ export class StudioCeCanvas extends Component {
                 await this.props.onInsertNewField(data.fieldType, targetBlock.xpath, position);
             } else if (data.type === "new_group") {
                 await this.props.onInsertNewGroup(targetBlock.xpath, position);
+            } else if (data.type === "new_button") {
+                await this.insertNewSmartButton(targetBlock.xpath, position);
             }
         } catch (e) {
             console.error("Drop error", e);

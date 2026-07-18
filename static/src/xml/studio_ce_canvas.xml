@@ -2,19 +2,55 @@
 <templates xml:space="preserve">
     <t t-name="web_studio_ce.StudioCeCanvas" owl="1">
         <div class="o_studio_ce_canvas h-100 d-flex flex-column position-relative bg-light p-3">
-            <div class="o_studio_ce_canvas_header bg-white border-bottom p-2 d-flex justify-content-between align-items-center mb-3 rounded shadow-sm">
-                <span class="fw-bold text-secondary small">🏗️ Canvas Layout Builder</span>
+            <!-- Canvas Header & Mode Switcher -->
+            <div class="o_studio_ce_canvas_header bg-white border-bottom p-2 d-flex justify-content-between align-items-center mb-3 rounded shadow-sm flex-shrink-0">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="fw-bold text-dark small">🖥️ Design Workspace Canvas</span>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary py-1 px-3" 
+                                t-att-class="state.viewMode === 'preview' ? 'active fw-bold' : ''"
+                                t-on-click="() => state.viewMode = 'preview'">Live Preview</button>
+                        <button class="btn btn-outline-primary py-1 px-3" 
+                                t-att-class="state.viewMode === 'layout' ? 'active fw-bold' : ''"
+                                t-on-click="() => state.viewMode = 'layout'">XML Layout Blocks</button>
+                    </div>
+                </div>
                 <div class="d-flex align-items-center gap-2">
                     <span class="badge bg-primary text-uppercase" t-if="props.view" t-esc="props.view.type"/>
                     <span class="text-muted small" t-if="props.view" t-esc="props.view.name"/>
                 </div>
             </div>
 
+            <!-- Main Render Area -->
             <div class="o_studio_ce_block_root flex-grow-1 overflow-auto bg-white border rounded shadow-sm p-4">
                 <t t-if="state.blocks &amp;&amp; state.blocks.length > 0">
-                    <t t-foreach="state.blocks" t-as="block" t-key="block.id">
-                        <t t-call="web_studio_ce.StudioCeBlockNode">
-                            <t t-set="block" t-value="block"/>
+                    <!-- 1. Live Preview Mode -->
+                    <t t-if="state.viewMode === 'preview'">
+                        <t t-if="props.view.type === 'form'">
+                            <t t-call="web_studio_ce.StudioCeFormPreview"/>
+                        </t>
+                        <t t-elif="props.view.type === 'list' || props.view.type === 'tree'">
+                            <t t-call="web_studio_ce.StudioCeListPreview"/>
+                        </t>
+                        <t t-elif="props.view.type === 'kanban'">
+                            <t t-call="web_studio_ce.StudioCeKanbanPreview"/>
+                        </t>
+                        <t t-else="">
+                            <!-- Fallback layout mode if no preview available -->
+                            <t t-foreach="state.blocks" t-as="block" t-key="block.id">
+                                <t t-call="web_studio_ce.StudioCeBlockNode">
+                                    <t t-set="block" t-value="block"/>
+                                </t>
+                            </t>
+                        </t>
+                    </t>
+
+                    <!-- 2. XML Layout Blocks Builder Mode -->
+                    <t t-else="">
+                        <t t-foreach="state.blocks" t-as="block" t-key="block.id">
+                            <t t-call="web_studio_ce.StudioCeBlockNode">
+                                <t t-set="block" t-value="block"/>
+                            </t>
                         </t>
                     </t>
                 </t>
@@ -86,6 +122,208 @@
                       Empty <t t-esc="block.tag"/> (Drop items here)
                   </div>
              </div>
+        </div>
+    </t>
+
+    <!-- 1. Form View Preview Template -->
+    <t t-name="web_studio_ce.StudioCeFormPreview" owl="1">
+        <div class="o_form_view o_form_readonly bg-white border rounded shadow-sm p-4 mx-auto" style="max-width: 850px; min-height: 600px;">
+            <!-- Mock Header Statusbar -->
+            <div class="o_form_statusbar border-bottom pb-2 mb-3 d-flex justify-content-between align-items-center">
+                <div class="o_statusbar_buttons d-flex gap-2">
+                    <button class="btn btn-secondary btn-sm" disabled="1">Edit</button>
+                    <button class="btn btn-secondary btn-sm" disabled="1">Create</button>
+                </div>
+                <div class="o_statusbar_status d-flex gap-1 text-uppercase small text-muted">
+                    <span class="px-2 py-1 rounded bg-primary text-white fw-bold">Draft</span>
+                    <span class="px-2 py-1">In Progress</span>
+                    <span class="px-2 py-1">Done</span>
+                </div>
+            </div>
+
+            <!-- Mock Sheet -->
+            <div class="o_form_sheet position-relative p-4 border rounded shadow-xs" style="min-height: 400px;">
+                <!-- Mock Button Box -->
+                <div class="oe_button_box d-flex justify-content-end border-bottom mb-3 pb-2 gap-2 bg-light p-2 rounded"
+                     style="min-height: 45px;"
+                     t-on-dragover.prevent.stop="onBlockDragOver"
+                     t-on-dragleave.stop="onBlockDragLeave"
+                     t-on-drop.stop="(ev) => this.onBlockDrop(ev, {xpath: '//div[@name=\'button_box\']'}, 'inside')">
+                    <t t-if="statButtons &amp;&amp; statButtons.length > 0">
+                        <t t-foreach="statButtons" t-as="btn" t-key="btn.id">
+                            <button t-att-class="getBlockClass(btn) + ' btn btn-outline-secondary btn-sm d-flex align-items-center gap-1 py-1 px-2 oe_stat_button'"
+                                    t-on-click.stop="() => this.selectBlock(btn)"
+                                    style="min-width: 100px; font-size: 0.75rem;">
+                                <span><i t-attf-class="fa {{btn.attrs.icon || 'fa-star'}} text-primary"/></span>
+                                <div class="text-start text-truncate" style="line-height: 1;">
+                                    <div class="fw-bold text-dark text-truncate"><t t-esc="btn.attrs.string || 'Stat Button'"/></div>
+                                    <div class="text-muted" style="font-size:0.6rem;">[<t t-esc="btn.attrs.name || 'action'"/>]</div>
+                                </div>
+                            </button>
+                        </t>
+                    </t>
+                    <t t-else="">
+                        <div class="text-muted small italic d-flex align-items-center justify-content-center w-100 font-monospace" style="font-size: 0.7rem;">
+                            Drop smart buttons here
+                        </div>
+                    </t>
+                </div>
+
+                <t t-foreach="sheetChildren" t-as="block" t-key="block.id">
+                    <t t-call="web_studio_ce.StudioCeFormElement">
+                        <t t-set="block" t-value="block"/>
+                    </t>
+                </t>
+            </div>
+        </div>
+    </t>
+
+    <!-- Form Element Component Renderer -->
+    <t t-name="web_studio_ce.StudioCeFormElement" owl="1">
+        <!-- Group -->
+        <t t-if="block.tag === 'group'">
+            <div t-att-class="getBlockClass(block) + ' o_studio_ce_group mb-3 border rounded border-dashed p-3'"
+                 t-att-data-xpath="block.xpath"
+                 t-on-click.stop="() => this.selectBlock(block)"
+                 style="cursor: pointer;">
+                <div class="text-uppercase text-muted fw-bold mb-2" style="font-size: 0.65rem;">
+                    📂 <t t-esc="block.attrs.string || 'Group Container'"/>
+                </div>
+                
+                <t t-if="hasSubGroups(block)">
+                    <div class="row g-3">
+                        <t t-foreach="block.children" t-as="sub" t-key="sub.id">
+                            <div class="col-md-6">
+                                <t t-call="web_studio_ce.StudioCeFormElement">
+                                    <t t-set="block" t-value="sub"/>
+                                </t>
+                            </div>
+                        </t>
+                    </div>
+                </t>
+                <t t-else="">
+                    <div class="d-flex flex-column gap-2">
+                        <t t-foreach="block.children" t-as="sub" t-key="sub.id">
+                            <t t-call="web_studio_ce.StudioCeFormElement">
+                                <t t-set="block" t-value="sub"/>
+                            </t>
+                        </t>
+                    </div>
+                </t>
+            </div>
+        </t>
+
+        <!-- Field -->
+        <t t-elif="block.tag === 'field'">
+            <div t-att-class="getBlockClass(block) + ' o_studio_ce_field d-flex align-items-center mb-2 p-2 border rounded bg-light bg-opacity-50'"
+                 t-att-data-xpath="block.xpath"
+                 t-on-click.stop="() => this.selectBlock(block)"
+                 style="cursor: pointer;">
+                 <label class="text-secondary small fw-bold me-2 text-truncate" style="width: 150px;">
+                     <t t-esc="getBlockLabel(block)"/>
+                 </label>
+                 <div class="flex-grow-1 text-muted small font-monospace">
+                     [<t t-esc="block.attrs.name"/>]
+                 </div>
+            </div>
+        </t>
+
+        <!-- Notebook -->
+        <t t-elif="block.tag === 'notebook'">
+            <div class="o_notebook mt-4 border rounded p-3 bg-light">
+                <ul class="nav nav-tabs nav-fill mb-3">
+                    <t t-foreach="block.children" t-as="page" t-key="page.id">
+                        <li class="nav-item">
+                            <span class="nav-link py-1 active fw-bold small text-primary"><t t-esc="getBlockLabel(page)"/></span>
+                        </li>
+                    </t>
+                </ul>
+                <div class="tab-content bg-white p-3 border rounded">
+                    <t t-if="block.children &amp;&amp; block.children.length > 0">
+                        <t t-foreach="block.children[0].children" t-as="sub" t-key="sub.id">
+                            <t t-call="web_studio_ce.StudioCeFormElement">
+                                <t t-set="block" t-value="sub"/>
+                            </t>
+                        </t>
+                    </t>
+                </div>
+            </div>
+        </t>
+
+        <!-- Fallback block cards -->
+        <t t-else="">
+            <div t-att-class="getBlockClass(block) + ' border rounded my-2 p-2 bg-light'"
+                 t-att-data-xpath="block.xpath"
+                 t-on-click.stop="() => this.selectBlock(block)">
+                 <div class="small fw-bold text-muted text-uppercase mb-1">&lt;<t t-esc="block.tag"/>&gt;</div>
+                 <t t-foreach="block.children" t-as="sub" t-key="sub.id">
+                     <t t-call="web_studio_ce.StudioCeFormElement">
+                         <t t-set="block" t-value="sub"/>
+                     </t>
+                 </t>
+            </div>
+        </t>
+    </t>
+
+    <!-- 2. List View Preview Template -->
+    <t t-name="web_studio_ce.StudioCeListPreview" owl="1">
+        <div class="o_list_view bg-white border rounded shadow-sm overflow-auto" style="min-height: 400px;">
+            <table class="table table-hover table-striped mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 40px;"></th>
+                        <t t-foreach="listFields" t-as="fieldBlock" t-key="fieldBlock.id">
+                            <th t-att-class="getBlockClass(fieldBlock) + ' py-2'"
+                                t-att-data-xpath="fieldBlock.xpath"
+                                t-on-click.stop="() => this.selectBlock(fieldBlock)"
+                                style="cursor: pointer; font-size:0.85rem;">
+                                📋 <t t-esc="getBlockLabel(fieldBlock)"/>
+                            </th>
+                        </t>
+                    </tr>
+                </thead>
+                <tbody>
+                    <t t-foreach="[1, 2, 3]" t-as="row" t-key="row">
+                        <tr>
+                            <td class="text-muted text-center py-2">⋮⋮</td>
+                            <t t-foreach="listFields" t-as="fieldBlock" t-key="fieldBlock.id">
+                                <td class="py-2 text-muted small">
+                                    [value: <t t-esc="fieldBlock.attrs.name"/>]
+                                </td>
+                            </t>
+                        </tr>
+                    </t>
+                </tbody>
+            </table>
+        </div>
+    </t>
+
+    <!-- 3. Kanban View Preview Template -->
+    <t t-name="web_studio_ce.StudioCeKanbanPreview" owl="1">
+        <div class="o_kanban_view bg-light border rounded shadow-sm p-3 d-flex gap-3 overflow-auto" style="min-height: 400px;">
+            <t t-foreach="['Draft', 'In Progress', 'Done']" t-as="col" t-key="col">
+                <div class="o_kanban_group flex-grow-1 border rounded bg-white bg-opacity-75 p-2 d-flex flex-column gap-2" style="min-width: 220px; max-width: 280px;">
+                    <div class="o_kanban_header fw-bold text-secondary border-bottom pb-1 mb-2 d-flex justify-content-between align-items-center">
+                        <span class="small font-weight-bold" t-esc="col"/>
+                        <span class="badge bg-secondary rounded-circle" style="font-size:0.65rem;">2</span>
+                    </div>
+                    
+                    <t t-foreach="[1, 2]" t-as="card" t-key="card">
+                        <div class="o_kanban_record border rounded p-2 bg-white shadow-xs d-flex flex-column gap-1">
+                            <t t-foreach="listFields.slice(0, 3)" t-as="fieldBlock" t-key="fieldBlock.id">
+                                <div class="text-truncate small">
+                                    <span class="text-secondary small" t-esc="getBlockLabel(fieldBlock)"/>: 
+                                    <strong class="text-dark">[<t t-esc="fieldBlock.attrs.name"/>]</strong>
+                                </div>
+                            </t>
+                            <div class="d-flex justify-content-between align-items-center mt-2 border-top pt-1">
+                                <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size:0.6rem;">🏷️ Tag</span>
+                                <span class="rounded-circle bg-dark text-white d-flex align-items-center justify-content-center small fw-bold" style="width: 18px; height: 18px; font-size: 8px;">U</span>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+            </t>
         </div>
     </t>
 </templates>
