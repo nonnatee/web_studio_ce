@@ -1,32 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
 .o_studio_ce_editor {
     height: 100vh;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background-color: #f8f9fa;
-    color: #333333;
+    font-family: 'Outfit', 'Inter', sans-serif;
+    background-color: #f3f4f6;
+    color: #1f2937;
 
-    .navbar {
-        background-color: #1c1f22 !important;
-        border-bottom: 1px solid #2d3033;
+    .navbar-studio {
+        background-color: #714B67 !important;
+        border-bottom: 1px solid #5a3c52;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+
+        .navbar-brand {
+            font-family: 'Outfit', sans-serif;
+            letter-spacing: -0.025em;
+        }
+
+        .nav-studio-tabs {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+
+            .nav-item {
+                .nav-link {
+                    color: rgba(255, 255, 255, 0.75) !important;
+                    font-size: 0.85rem;
+                    font-weight: 500;
+                    padding: 6px 14px;
+                    border-radius: 6px;
+                    transition: all 0.15s ease;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+
+                    &:hover {
+                        color: #ffffff !important;
+                        background-color: rgba(255, 255, 255, 0.1);
+                    }
+
+                    &.active {
+                        color: #ffffff !important;
+                        background-color: rgba(255, 255, 255, 0.2) !important;
+                        font-weight: 600;
+                    }
+                }
+            }
+        }
     }
 
     .o_studio_ce_sidebar {
         background-color: #ffffff;
-        border-right: 1px solid #dee2e6;
+        border-right: 1px solid #e5e7eb;
         width: 320px;
         min-width: 320px;
-
-        .nav-tabs {
-            .nav-link {
-                border-radius: 0;
-                font-weight: 500;
-                color: #6c757d;
-
-                &.active {
-                    color: #007bff;
-                    border-bottom: 2px solid #007bff;
-                }
-            }
-        }
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.02);
     }
 
     .border-dashed {

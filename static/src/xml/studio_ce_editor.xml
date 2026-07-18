@@ -3,22 +3,70 @@
     <t t-name="web_studio_ce.StudioCeEditor" owl="1">
         <div class="o_studio_ce_editor container-fluid d-flex flex-column h-100 bg-light p-0">
             <!-- Top Navbar -->
-            <header class="navbar navbar-dark bg-dark text-white px-3 py-2 flex-shrink-0 d-flex justify-content-between align-items-center">
+            <header class="navbar-studio text-white px-3 py-2 flex-shrink-0 d-flex justify-content-between align-items-center">
+                <!-- Left: Branding -->
                 <div class="d-flex align-items-center">
-                    <span class="navbar-brand fw-bold mb-0 h4">Odoo Studio <span class="text-primary">CE</span></span>
-                    <span class="badge bg-secondary ms-3"><t t-esc="state.model"/></span>
+                    <span class="navbar-brand fw-bold mb-0 h5 text-white d-flex align-items-center gap-1">
+                        <span style="font-size: 1.1rem;">🛠️</span> Odoo Studio <span class="text-info" style="font-size: 0.8rem; font-weight: 500;">CE</span>
+                    </span>
+                    <span class="badge bg-white bg-opacity-25 text-white ms-3 px-2 py-1 small rounded font-monospace" style="font-size: 0.75rem;"><t t-esc="state.model"/></span>
                 </div>
+
+                <!-- Center: Navigation Tabs -->
+                <ul class="nav-studio-tabs">
+                    <li class="nav-item">
+                        <button class="nav-link border-0 bg-transparent" 
+                                t-att-class="{ active: state.activeTab === 'views' || !['reports', 'automations', 'approvals', 'security', 'menu'].includes(state.activeTab) }"
+                                t-on-click="() => this.onTabChange('views')">
+                            <span>👁️</span> Views
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link border-0 bg-transparent" 
+                                t-att-class="{ active: state.activeTab === 'reports' }"
+                                t-on-click="() => this.onTabChange('reports')">
+                            <span>📄</span> Reports
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link border-0 bg-transparent" 
+                                t-att-class="{ active: state.activeTab === 'automations' }"
+                                t-on-click="() => this.onTabChange('automations')">
+                            <span>⚡</span> Rules
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link border-0 bg-transparent" 
+                                t-att-class="{ active: state.activeTab === 'approvals' }"
+                                t-on-click="() => this.onTabChange('approvals')">
+                            <span>🛡️</span> Approvals
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link border-0 bg-transparent" 
+                                t-att-class="{ active: state.activeTab === 'security' }"
+                                t-on-click="() => this.onTabChange('security')">
+                            <span>🔒</span> Security
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link border-0 bg-transparent" 
+                                t-att-class="{ active: state.activeTab === 'menu' }"
+                                t-on-click="() => this.onTabChange('menu')">
+                            <span>🌿</span> Menu
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Right: Utility Actions -->
                 <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1" t-on-click="() => this.onTabChange('menu')">
-                        <span>🌿</span> Edit Menu
-                    </button>
-                    <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1" t-on-click="openAppCreator">
+                    <button class="btn btn-sm btn-info text-white d-flex align-items-center gap-1" t-on-click="openAppCreator" style="font-size:0.8rem; font-weight:500;">
                         <span>🆕</span> Create App
                     </button>
-                    <button class="btn btn-outline-light btn-sm o_studio_ce_help_btn d-flex align-items-center gap-1" t-on-click="openDocs">
+                    <button class="btn btn-sm btn-outline-light d-flex align-items-center gap-1" t-on-click="openDocs" style="font-size:0.8rem; font-weight:500;">
                         <span>📖</span> Help
                     </button>
-                    <button class="btn btn-outline-danger btn-sm" t-on-click="closeStudio">Close Studio</button>
+                    <button class="btn btn-sm btn-danger px-3" t-on-click="closeStudio" style="font-size:0.8rem; font-weight:600;">Close Studio</button>
                 </div>
             </header>
 
