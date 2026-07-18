@@ -215,15 +215,85 @@
 
         <!-- Field -->
         <t t-elif="block.tag === 'field'">
-            <div t-att-class="getBlockClass(block) + ' o_studio_ce_field d-flex align-items-center mb-2 p-2 border rounded bg-light bg-opacity-50'"
+            <div t-att-class="getBlockClass(block) + ' o_studio_ce_field d-flex align-items-center mb-2 p-2 border rounded bg-white'"
                  t-att-data-xpath="block.xpath"
                  t-on-click.stop="() => this.selectBlock(block)"
-                 style="cursor: pointer;">
+                 style="cursor: pointer; min-height: 48px;">
                  <label class="text-secondary small fw-bold me-2 text-truncate" style="width: 150px;">
                      <t t-esc="getBlockLabel(block)"/>
                  </label>
-                 <div class="flex-grow-1 text-muted small font-monospace">
-                     [<t t-esc="block.attrs.name"/>]
+                 
+                 <!-- Dynamic mock renderer per field type -->
+                 <div class="flex-grow-1">
+                     <t t-set="f_type" t-value="props.fields.find(f => f.name === block.attrs.name) ? props.fields.find(f => f.name === block.attrs.name).ttype : 'char'"/>
+                     
+                     <!-- 1. Boolean Checkbox -->
+                     <t t-if="f_type === 'boolean'">
+                         <div class="form-check form-switch m-0">
+                             <input type="checkbox" class="form-check-input" checked="1" disabled="1" style="cursor: pointer;"/>
+                         </div>
+                     </t>
+
+                     <!-- 2. Many2one relation lookup -->
+                     <t t-elif="f_type === 'many2one'">
+                         <div class="o_field_widget o_field_many2one d-flex align-items-center position-relative w-100">
+                             <div class="o_input_dropdown flex-grow-1 d-flex align-items-center border rounded bg-light px-2" style="height: 30px;">
+                                 <input type="text" class="o_input border-0 bg-transparent flex-grow-1 p-0 small text-dark" t-att-value="getMockValue(block)" disabled="1" style="font-size:0.8rem; outline: none;"/>
+                                 <span class="text-muted ms-1" style="font-size: 0.7rem;">▼</span>
+                             </div>
+                         </div>
+                     </t>
+
+                     <!-- 3. Many2many tag list -->
+                     <t t-elif="f_type === 'many2many'">
+                         <div class="o_field_tags d-flex flex-wrap gap-1 align-items-center">
+                             <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-2 py-1" style="font-size: 0.7rem;">Tag Sample A</span>
+                             <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-2 py-1" style="font-size: 0.7rem;">Tag Sample B</span>
+                         </div>
+                     </t>
+
+                     <!-- 4. Selection Dropdown -->
+                     <t t-elif="f_type === 'selection'">
+                         <select class="o_input form-select form-select-sm" disabled="1" style="height: 30px; font-size: 0.8rem;">
+                             <option t-esc="getMockValue(block)"/>
+                         </select>
+                     </t>
+
+                     <!-- 5. Monetary input group -->
+                     <t t-elif="f_type === 'monetary'">
+                         <div class="input-group input-group-sm" style="max-width: 200px;">
+                             <span class="input-group-text bg-light border text-muted py-0 px-2" style="font-size:0.75rem;">$</span>
+                             <input type="text" class="form-control form-control-sm border text-end" t-att-value="getMockValue(block)" disabled="1" style="font-size:0.8rem;"/>
+                         </div>
+                     </t>
+
+                     <!-- 6. Date / Datetime -->
+                     <t t-elif="f_type === 'date' || f_type === 'datetime'">
+                         <div class="d-flex align-items-center border rounded bg-light px-2" style="height: 30px; max-width: 220px;">
+                             <span class="me-1 text-muted" style="font-size: 0.85rem;">📅</span>
+                             <input type="text" class="border-0 bg-transparent flex-grow-1 p-0 small text-dark" t-att-value="getMockValue(block)" disabled="1" style="font-size:0.8rem; outline: none;"/>
+                         </div>
+                     </t>
+
+                     <!-- 7. HTML widget -->
+                     <t t-elif="f_type === 'html'">
+                         <div class="border rounded bg-light p-2 text-muted text-wrap overflow-hidden small" style="min-height: 50px; font-size:0.75rem; max-height: 100px;">
+                             <t t-out="getMockValue(block)"/>
+                         </div>
+                     </t>
+
+                     <!-- 8. Binary / File Upload -->
+                     <t t-elif="f_type === 'binary'">
+                         <div class="d-flex align-items-center gap-2">
+                             <button class="btn btn-xs btn-outline-primary py-0 px-2" disabled="1" style="font-size:0.7rem;">📎 Upload File</button>
+                             <span class="text-muted font-monospace" style="font-size:0.7rem;"><t t-esc="getMockValue(block)"/></span>
+                         </div>
+                     </t>
+
+                     <!-- Default Text/Char/Integer/Float -->
+                     <t t-else="">
+                         <input type="text" class="o_input form-control form-control-sm border" t-att-value="getMockValue(block)" disabled="1" style="height: 30px; font-size: 0.8rem;"/>
+                     </t>
                  </div>
             </div>
         </t>
@@ -282,18 +352,18 @@
                         </t>
                     </tr>
                 </thead>
-                <tbody>
+                 <tbody>
                     <t t-foreach="[1, 2, 3]" t-as="row" t-key="row">
                         <tr>
                             <td class="text-muted text-center py-2">⋮⋮</td>
                             <t t-foreach="listFields" t-as="fieldBlock" t-key="fieldBlock.id">
                                 <td class="py-2 text-muted small">
-                                    [value: <t t-esc="fieldBlock.attrs.name"/>]
+                                    <t t-esc="getMockValue(fieldBlock)"/>
                                 </td>
                             </t>
                         </tr>
                     </t>
-                </tbody>
+                 </tbody>
             </table>
         </div>
     </t>
@@ -308,20 +378,22 @@
                         <span class="badge bg-secondary rounded-circle" style="font-size:0.65rem;">2</span>
                     </div>
                     
+
                     <t t-foreach="[1, 2]" t-as="card" t-key="card">
                         <div class="o_kanban_record border rounded p-2 bg-white shadow-xs d-flex flex-column gap-1">
                             <t t-foreach="listFields.slice(0, 3)" t-as="fieldBlock" t-key="fieldBlock.id">
                                 <div class="text-truncate small">
                                     <span class="text-secondary small" t-esc="getBlockLabel(fieldBlock)"/>: 
-                                    <strong class="text-dark">[<t t-esc="fieldBlock.attrs.name"/>]</strong>
+                                    <strong class="text-dark"><t t-esc="getMockValue(fieldBlock)"/></strong>
                                 </div>
                             </t>
-                            <div class="d-flex justify-content-between align-items-center mt-2 border-top pt-1">
-                                <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size:0.6rem;">🏷️ Tag</span>
-                                <span class="rounded-circle bg-dark text-white d-flex align-items-center justify-content-center small fw-bold" style="width: 18px; height: 18px; font-size: 8px;">U</span>
-                            </div>
-                        </div>
                     </t>
+                    <div class="d-flex justify-content-between align-items-center mt-2 border-top pt-1">
+                        <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size:0.6rem;">🏷️ Tag</span>
+                        <span class="rounded-circle bg-dark text-white d-flex align-items-center justify-content-center small fw-bold" style="width: 18px; height: 18px; font-size: 8px;">U</span>
+                    </div>
+                </div>
+            </t>
                 </div>
             </t>
         </div>

@@ -173,6 +173,44 @@ export class StudioCeCanvas extends Component {
         return block.children && block.children.some(c => c.tag === "group");
     }
 
+    getMockValue(block) {
+        const name = block.attrs.name || "";
+        const label = this.getBlockLabel(block);
+        
+        const field = this.props.fields.find(f => f.name === name);
+        const ttype = field ? field.ttype : (block.attrs.widget || "char");
+        
+        switch (ttype) {
+            case "boolean":
+                return true;
+            case "integer":
+                return "42";
+            case "float":
+                return "19.99";
+            case "monetary":
+                return "1,250.00";
+            case "date":
+                return "2026-07-18";
+            case "datetime":
+                return "2026-07-18 14:30:00";
+            case "many2one":
+                return field && field.relation ? `Mock ${field.relation} (ID: 1)` : "Administrator";
+            case "selection":
+                return "Draft";
+            case "many2many":
+                return "Tags";
+            case "html":
+                return "<p>This is a <strong>mock description</strong> for preview purposes.</p>";
+            case "binary":
+                return "file.pdf";
+            default:
+                if (name.includes("name") || name.includes("title")) {
+                    return `Mock ${this.props.model} Record`;
+                }
+                return `Mock ${label}`;
+        }
+    }
+
     isContainer(block) {
         return ["sheet", "group", "notebook", "page", "form", "list", "tree", "kanban", "div", "header", "footer"].includes(block.tag);
     }
