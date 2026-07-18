@@ -377,8 +377,6 @@
                         <span class="small font-weight-bold" t-esc="col"/>
                         <span class="badge bg-secondary rounded-circle" style="font-size:0.65rem;">2</span>
                     </div>
-                    
-
                     <t t-foreach="[1, 2]" t-as="card" t-key="card">
                         <div class="o_kanban_record border rounded p-2 bg-white shadow-xs d-flex flex-column gap-1">
                             <t t-foreach="listFields.slice(0, 3)" t-as="fieldBlock" t-key="fieldBlock.id">
@@ -387,13 +385,12 @@
                                     <strong class="text-dark"><t t-esc="getMockValue(fieldBlock)"/></strong>
                                 </div>
                             </t>
+                            <div class="d-flex justify-content-between align-items-center mt-2 border-top pt-1">
+                                <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size:0.6rem;">🏷️ Tag</span>
+                                <span class="rounded-circle bg-dark text-white d-flex align-items-center justify-content-center small fw-bold" style="width: 18px; height: 18px; font-size: 8px;">U</span>
+                            </div>
+                        </div>
                     </t>
-                    <div class="d-flex justify-content-between align-items-center mt-2 border-top pt-1">
-                        <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size:0.6rem;">🏷️ Tag</span>
-                        <span class="rounded-circle bg-dark text-white d-flex align-items-center justify-content-center small fw-bold" style="width: 18px; height: 18px; font-size: 8px;">U</span>
-                    </div>
-                </div>
-            </t>
                 </div>
             </t>
         </div>
