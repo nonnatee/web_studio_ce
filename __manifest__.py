@@ -1,12 +1,17 @@
 # -*- coding: utf-8 -*-
 {
-    'name': 'Odoo StudioCE)',
+    'name': 'Odoo Studio CE',
     'version': '1.0',
     'category': 'Extra Tools',
     'summary': 'Interactive visual builder for views, reports, automations, and security in Odoo CE.',
     'description': """
-This module provides a complete no-code/low-code customization environment for Odoo Community Edition.
-It enables dynamic modification of fields, views, PDF report templates, automated actions, menus, and user access rights.
+Odoo Studio CE is a complete no-code/low-code customization environment replicating Odoo 19 Enterprise Studio features:
+* App & Model Wizard: Easily create new models with 14 suggested features (Chatter, Archiving, Sorting, Company, Tags, image fields, etc.) using Odoo 19 <list> syntax.
+* Multi-Step Button Approvals: Configure button-specific sequential approval workflows with exclusive approval rules and visual badge indicators.
+* Security Matrix: Edit group ACL privileges (Read/Write/Create/Delete) and record rules dynamically.
+* Automated Actions & Webhooks: Support incoming webhook endpoints and outgoing REST REST actions.
+* QWeb Report Editor: Interactive element selector, raw XML editing tab, and slash commands snippets editor.
+* Customisation Logger: Live list of changes with support to revert any modification.
     """,
     'author': 'Nonnatee Kanjana',
     'depends': [

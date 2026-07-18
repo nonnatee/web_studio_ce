@@ -97,7 +97,7 @@ const USER_GUIDE_TOPICS = [
     },
     {
         id: "automation-rules",
-        title: "Automation Rules",
+        title: "Automation & Webhooks",
         icon: "⚡",
         sections: [
             {
@@ -109,26 +109,39 @@ const USER_GUIDE_TOPICS = [
                 content: `In the <strong>Rules</strong> tab, click <strong>"Create Rule"</strong> to add a new automation. By default, rules are created with the <code>on_create</code> trigger, which fires when a new record is created on the model.`,
             },
             {
-                heading: "Available Triggers",
+                heading: "Available Triggers (Odoo 19)",
                 content: `Odoo's base automation framework supports several trigger events:`,
                 list: [
                     "<strong>on_create</strong> — When a record is created.",
-                    "<strong>on_write</strong> — When a record is updated.",
+                    "<strong>on_create_or_write</strong> — When a record is created or updated.",
                     "<strong>on_unlink</strong> — When a record is deleted.",
-                    "<strong>on_change</strong> — When a specific field value changes.",
-                    "<strong>on_time</strong> — Based on a date/datetime field condition.",
+                    "<strong>on_time</strong> — Triggered based on a date/datetime field and a delay.",
+                    "<strong>on_webhook</strong> — Incoming Webhook trigger. Provides a public, CSRF-free endpoint to trigger this automation externally.",
                 ],
             },
             {
-                heading: "Managing Existing Rules",
-                content: `All automation rules for the current model are listed in the Rules tab, showing the rule name and its trigger type. Rules created by Studio CE are flagged with <code>is_studio_ce = True</code> for easy identification.`,
-                tip: `For advanced configuration (server actions, email templates, Python code), edit the automation rule directly in <strong>Settings → Technical → Automated Actions</strong>.`,
+                heading: "Incoming Webhook Triggers",
+                content: `If you select the <strong>Incoming Webhook</strong> trigger, Odoo will generate a public URL. You can send JSON POST payloads to this URL to trigger your automation rule. The JSON payload can be processed directly inside Python code using the <code>webhook_payload</code> variable.`,
+            },
+            {
+                heading: "Outbound REST Webhooks",
+                content: `You can configure automation rules to send outbound HTTP requests to external APIs. Under **Action to Do**, select **Send Outbound Webhook**, then define the target Webhook URL and HTTP Method (POST, PUT, PATCH, GET).`,
+            },
+            {
+                heading: "Executing Python Code",
+                content: `You can execute custom Python code dynamically. Accessible variables include:`,
+                list: [
+                    "<code>env</code> — The database environment context.",
+                    "<code>model</code> — The Odoo model reference.",
+                    "<code>record</code> — The active record being triggered.",
+                    "<code>webhook_payload</code> — The incoming JSON request dictionary (only for webhook triggers).",
+                ],
             },
         ],
     },
     {
         id: "security-permissions",
-        title: "Security & Permissions",
+        title: "Security & Record Rules",
         icon: "🔒",
         sections: [
             {
@@ -136,23 +149,75 @@ const USER_GUIDE_TOPICS = [
                 content: `Access to Studio CE is restricted to users with the <strong>Studio Administrator</strong> permission. This is a dedicated security group (<code>web_studio_ce.group_studio_ce</code>) that controls who can open and use the Studio CE editor.`,
             },
             {
-                heading: "The Studio Administrator Group",
-                content: `By default, only the <strong>root user</strong> and the <strong>admin user</strong> have Studio Administrator permissions. The group is defined under the <strong>Studio CE</strong> category and implies the base <code>Internal User</code> group.`,
+                heading: "The Security Panel Overview",
+                content: `The Security Panel is accessible via the **Security** tab in the sidebar. It contains two main sections: Access Control Lists (ACL) Matrix and Row-level Record Rules.`,
             },
             {
-                heading: "Granting Access",
-                content: `To grant a user access to Studio CE:`,
+                heading: "Access Control (ACL) Matrix",
+                content: `The matrix table allows you to toggle standard Read, Write, Create, and Delete (unlink) privileges for Odoo groups on the current model. Use the **Add Group** dropdown to append new groups to the matrix.`,
+            },
+            {
+                heading: "Row-Level Record Rules (ir.rule)",
+                content: `Record rules apply row-level filters using Python domain expressions to restrict record access based on values. For example, to allow users to view only their own records, use: <code>[('create_uid', '=', user.id)]</code>.`,
+            },
+            {
+                heading: "Creating & Modifying Rules",
+                content: `Click **Add Rule** to create a rule. You can toggle check permissions (Read/Write/Create/Delete), edit the domain force string, and choose which groups this rule applies to.`,
+            },
+        ],
+    },
+    {
+        id: "button-approvals",
+        title: "Button Approvals",
+        icon: "🛡️",
+        sections: [
+            {
+                heading: "What are Button Approvals?",
+                content: `Button Approvals are button-specific multi-step workflows. When defined, Odoo blocks users from calling the button's backend method unless the required sequential approval steps have been completed by authorized groups.`,
+            },
+            {
+                heading: "How to Configure Approvals",
+                content: `While in Studio design mode, click any button in the form view canvas. The sidebar will load the Button Approval configuration panel.`,
+            },
+            {
+                heading: "Sequential Steps",
+                content: `You can add multiple sequential approval steps. Odoo validates these in sequence. Authorized users can approve steps by clicking the button.`,
+            },
+            {
+                heading: "Exclusive Approvals",
+                content: `Enabling the **Exclusive** flag on an approval step ensures that the user who approved a prior step cannot approve this step. This prevents self-approving across multiple steps.`,
+            },
+            {
+                heading: "Visual Status Badges",
+                content: `Buttons requiring approvals render a shield icon badge showing the number of steps required, providing real-time visual hints during view design.`,
+            },
+        ],
+    },
+    {
+        id: "report-designer",
+        title: "QWeb Report Designer",
+        icon: "📄",
+        sections: [
+            {
+                heading: "Live print report preview",
+                content: `The report editor embeds a live HTML preview iframe. As you modify properties or structure, the preview automatically updates to reflect your changes.`,
+            },
+            {
+                heading: "Interactive Element Selector",
+                content: `Hovering over elements inside the preview iframe highlights them with a purple outline. Clicking an element displays a popup help message to easily locate it in the QWeb XML Tree.`,
+            },
+            {
+                heading: "Direct XML Source Editing",
+                content: `The **XML Source** tab provides a raw code editor. You can view and edit the raw XML arch of the report template, allowing advanced developers to write direct QWeb directives.`,
+            },
+            {
+                heading: "Slash Commands / Snippets",
+                content: `When an element is selected in the QWeb Tree, you can use the **Slash Commands / Snippets** panel to instantly insert blocks of code:`,
                 list: [
-                    "Go to <strong>Settings → Users & Companies → Users</strong>.",
-                    "Select the user you want to grant access to.",
-                    "Under the <strong>Studio CE</strong> section, enable <strong>Studio Administrator</strong>.",
-                    "Save the user record.",
+                    "<code>/field</code> — Inserts a dynamic t-field binding.",
+                    "<code>/table</code> — Inserts a beautiful striped tabular list with t-foreach looping.",
+                    "<code>/if</code> — Inserts a conditional t-if visibility block.",
                 ],
-            },
-            {
-                heading: "Access Control in Detail",
-                content: `Every Studio CE controller endpoint checks for <code>web_studio_ce.group_studio_ce</code> membership before executing. If a user without this group attempts to call any Studio CE API, they will receive an <strong>"Access Denied"</strong> error.`,
-                warning: `Studio CE grants significant power to modify your Odoo database structure. Only assign the Studio Administrator role to trusted users who understand the implications of adding fields and modifying views.`,
             },
         ],
     },
