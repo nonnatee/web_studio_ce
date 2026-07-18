@@ -27,7 +27,7 @@
                 <!-- Left Panel: Menu Tree -->
                 <div class="flex-grow-1 bg-white border rounded shadow-sm p-3 overflow-auto">
                     <h5 class="fw-bold mb-3 border-bottom pb-2 text-secondary">Menu Hierarchy</h5>
-                    <t t-if="state.menuTree &amp;&amp; state.menuTree.length > 0">
+                    <t t-if="state.menuTree.length">
                         <t t-foreach="state.menuTree" t-as="menu" t-key="menu.id">
                             <t t-call="web_studio_ce.MenuNode">
                                 <t t-set="menu" t-value="menu"/>
@@ -107,12 +107,12 @@
     <!-- Recursive Node Node Template -->
     <t t-name="web_studio_ce.MenuNode" owl="1">
         <div class="o_menu_node py-2 px-3 my-1 rounded border-start border-3 transition-all"
-             t-att-class="state.selectedMenu &amp;&amp; state.selectedMenu.id === menu.id ? 'bg-primary text-white border-primary fw-bold shadow-sm' : 'bg-light text-dark border-secondary bg-opacity-75'"
+             t-att-class="state.selectedMenu?.id === menu.id ? 'bg-primary text-white border-primary fw-bold shadow-sm' : 'bg-light text-dark border-secondary bg-opacity-75'"
              t-on-click.stop="() => this.selectMenu(menu)"
              style="cursor: pointer; font-size: 0.85rem; padding-left: 10px;">
-             📂 <t t-esc="menu.name"/> <small t-att-class="state.selectedMenu &amp;&amp; state.selectedMenu.id === menu.id ? 'text-white-50' : 'text-muted'" class="font-monospace ms-1" style="font-size:0.65rem;">(Seq: <t t-esc="menu.sequence"/>)</small>
+             📂 <t t-esc="menu.name"/> <small t-att-class="state.selectedMenu?.id === menu.id ? 'text-white-50' : 'text-muted'" class="font-monospace ms-1" style="font-size:0.65rem;">(Seq: <t t-esc="menu.sequence"/>)</small>
         </div>
-        <div t-if="menu.children &amp;&amp; menu.children.length > 0" class="ms-3 border-start ps-2">
+        <div t-if="menu.children.length" class="ms-3 border-start ps-2">
             <t t-foreach="menu.children" t-as="child" t-key="child.id">
                 <t t-call="web_studio_ce.MenuNode">
                     <t t-set="menu" t-value="child"/>

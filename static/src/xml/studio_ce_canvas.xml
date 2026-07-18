@@ -23,7 +23,7 @@
 
             <!-- Main Render Area -->
             <div class="o_studio_ce_block_root flex-grow-1 overflow-auto bg-white border rounded shadow-sm p-4">
-                <t t-if="state.blocks &amp;&amp; state.blocks.length > 0">
+                <t t-if="state.blocks.length">
                     <!-- 1. Live Preview Mode -->
                     <t t-if="state.viewMode === 'preview'">
                         <t t-if="props.view.type === 'form'">
@@ -149,7 +149,7 @@
                      t-on-dragover.prevent.stop="onBlockDragOver"
                      t-on-dragleave.stop="onBlockDragLeave"
                      t-on-drop.stop="(ev) => this.onBlockDrop(ev, {xpath: '//div[@name=\'button_box\']'}, 'inside')">
-                    <t t-if="statButtons &amp;&amp; statButtons.length > 0">
+                    <t t-if="statButtons.length">
                         <t t-foreach="statButtons" t-as="btn" t-key="btn.id">
                             <button t-att-class="getBlockClass(btn) + ' btn btn-outline-secondary btn-sm d-flex align-items-center gap-1 py-1 px-2 oe_stat_button'"
                                     t-on-click.stop="() => this.selectBlock(btn)"
@@ -309,7 +309,7 @@
                     </t>
                 </ul>
                 <div class="tab-content bg-white p-3 border rounded">
-                    <t t-if="block.children &amp;&amp; block.children.length > 0">
+                    <t t-if="block.children.length">
                         <t t-foreach="block.children[0].children" t-as="sub" t-key="sub.id">
                             <t t-call="web_studio_ce.StudioCeFormElement">
                                 <t t-set="block" t-value="sub"/>
