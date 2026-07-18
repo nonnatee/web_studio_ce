@@ -639,12 +639,15 @@ class StudioCeController(http.Controller):
             form_right_xml.append('<field name="x_date"/>')
         if 'tags' in features:
             form_right_xml.append('<field name="x_tag_ids" widget="many2many_tags"/>')
+
+        avatar_xml = ""
         if 'picture' in features:
-            form_right_xml.append('<field name="x_image" widget="image" class="oe_avatar"/>')
+            avatar_xml = '<field name="x_image" widget="image" class="oe_avatar" options="{\'size\': [90, 90]}"/>'
 
         form_body = f"""
             <sheet>
-                <div class="oe_title" t-if="not { 'picture' in features }">
+                {avatar_xml}
+                <div class="oe_title">
                     <label for="x_name"/>
                     <h1><field name="x_name" placeholder="e.g. New Record"/></h1>
                 </div>
