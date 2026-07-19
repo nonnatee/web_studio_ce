@@ -7,11 +7,41 @@
 
             <!-- Top Navbar -->
             <header class="navbar-studio text-white px-3 py-2 flex-shrink-0 d-flex justify-content-between align-items-center">
-                <!-- Left: Dynamic Breadcrumb -->
-                <div class="d-flex align-items-center text-uppercase font-weight-bold" style="font-family: 'Outfit', sans-serif; font-size: 0.85rem; letter-spacing: 0.05em; color: rgba(255, 255, 255, 0.85);">
+                <!-- Left: Dynamic Breadcrumb & View Selector -->
+                <div class="d-flex align-items-center text-uppercase font-weight-bold" style="font-family: 'Outfit', sans-serif; font-size: 0.85rem; letter-spacing: 0.05em; color: rgba(255, 255, 255, 0.85); position: relative;">
                     <span class="text-muted" style="color: rgba(255, 255, 255, 0.5) !important;">Views</span>
                     <span class="mx-2 text-white-50">></span>
-                    <span class="text-white fw-bold"><t t-esc="activeViewType"/></span>
+                    
+                    <div class="position-relative d-inline-block o_studio_ce_view_dropdown_container">
+                        <button class="btn btn-sm btn-link text-white fw-bold text-decoration-none p-0 d-flex align-items-center gap-1 border-0 bg-transparent text-uppercase dropdown-toggle" 
+                                t-on-click="toggleViewDropdown" 
+                                style="font-size: 0.85rem; letter-spacing: 0.05em; outline: none; box-shadow: none;">
+                            <span class="text-white fw-bold"><t t-esc="activeViewName"/></span>
+                            <span class="badge bg-primary text-lowercase ms-1 font-monospace" style="font-size: 0.65rem;"><t t-esc="activeViewType"/></span>
+                            <span style="font-size: 0.7rem; opacity: 0.7;">▼</span>
+                        </button>
+                        
+                        <!-- Transparent click-outside overlay backplate -->
+                        <div t-if="state.isViewDropdownOpen" class="position-fixed top-0 start-0 w-100 h-100 bg-transparent" style="z-index: 1055;" t-on-click="toggleViewDropdown"/>
+                        
+                        <!-- Dropdown Menu -->
+                        <div t-if="state.isViewDropdownOpen" class="o_studio_ce_view_dropdown position-absolute start-0 mt-2 bg-dark rounded shadow-lg p-2 border border-secondary" style="z-index: 1060; min-width: 280px; top: 100%; font-family: 'Outfit', 'Inter', sans-serif;">
+                            <t t-foreach="groupedViews" t-as="group" t-key="group.typeLabel">
+                                <div class="px-2 py-1 text-muted fw-bold border-bottom border-secondary mb-1" style="font-size: 0.65rem; letter-spacing: 0.05em; color: rgba(255, 255, 255, 0.4) !important;">
+                                    <t t-esc="group.typeLabel"/>
+                                </div>
+                                <t t-foreach="group.views" t-as="v" t-key="v.id">
+                                    <button class="dropdown-item btn btn-sm text-start text-white w-100 py-1.5 px-2 rounded mb-1 d-flex justify-content-between align-items-center border-0 bg-transparent"
+                                            t-att-class="{ 'bg-primary fw-bold text-white': v.id === state.viewId || (!state.viewId &amp;&amp; state.views[0] &amp;&amp; v.id === state.views[0].id) }"
+                                            t-on-click="() => this.selectView(v.id)">
+                                        <span class="text-truncate text-capitalize" style="max-width: 180px; font-size: 0.78rem;" t-esc="v.name"/>
+                                        <span t-if="v.is_studio_ce" class="badge bg-warning text-dark fw-bold px-1.5 py-0.5 rounded-pill" style="font-size: 0.6rem; transform: scale(0.9);">🪄 Studio</span>
+                                    </button>
+                                </t>
+                            </t>
+                        </div>
+                    </div>
+                    
                     <span class="badge bg-white bg-opacity-10 text-white-50 ms-3 font-monospace" style="font-size: 0.65rem; text-transform: none;"><t t-esc="state.model"/></span>
                 </div>
 

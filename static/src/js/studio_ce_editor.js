@@ -41,6 +41,7 @@ export class StudioCeEditor extends Component {
             fieldCreateIsCustomName: false,
             fieldCreateError: "",
             selectedReport: null,
+            isViewDropdownOpen: false,
         });
 
         onWillStart(async () => {
@@ -51,6 +52,42 @@ export class StudioCeEditor extends Component {
     get activeViewType() {
         const activeView = this.state.views.find(v => v.id === this.state.viewId) || this.state.views[0];
         return activeView ? activeView.type : "form";
+    }
+
+    get activeViewName() {
+        const activeView = this.state.views.find(v => v.id === this.state.viewId) || this.state.views[0];
+        return activeView ? activeView.name : "Default View";
+    }
+
+    get groupedViews() {
+        const groups = {};
+        const viewTypes = {
+            form: "Form Views",
+            list: "List Views",
+            tree: "List Views",
+            kanban: "Kanban Views",
+            search: "Search Views"
+        };
+        for (const view of this.state.views || []) {
+            const label = viewTypes[view.type] || (view.type.charAt(0).toUpperCase() + view.type.slice(1) + " Views");
+            if (!groups[label]) {
+                groups[label] = [];
+            }
+            groups[label].push(view);
+        }
+        return Object.entries(groups).map(([typeLabel, views]) => ({
+            typeLabel,
+            views
+        }));
+    }
+
+    toggleViewDropdown() {
+        this.state.isViewDropdownOpen = !this.state.isViewDropdownOpen;
+    }
+
+    selectView(viewId) {
+        this.state.isViewDropdownOpen = false;
+        this.onViewChange(viewId);
     }
 
     async undoLastChange() {

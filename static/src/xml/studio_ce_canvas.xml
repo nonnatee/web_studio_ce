@@ -15,9 +15,34 @@
                                 t-on-click="() => state.viewMode = 'layout'">XML Layout Blocks</button>
                     </div>
                 </div>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-primary text-uppercase" t-if="props.view" t-esc="props.view.type"/>
-                    <span class="text-muted small" t-if="props.view" t-esc="props.view.name"/>
+                <div class="position-relative d-flex align-items-center gap-2 o_studio_ce_canvas_view_dropdown_container">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2" 
+                            t-on-click="toggleViewDropdown"
+                            style="border-color: #dee2e6; color: #495057; font-size: 0.8rem; font-weight: 500; border-radius: 6px;">
+                        <span class="badge bg-primary text-uppercase" t-if="props.view" t-esc="props.view.type" style="font-size: 0.65rem; padding: 2px 6px;"/>
+                        <span class="text-dark fw-bold text-truncate" t-if="props.view" t-esc="props.view.name" style="max-width: 220px;"/>
+                        <span t-if="props.view &amp;&amp; props.view.is_studio_ce" class="ms-1" title="Modified by Studio CE">🪄</span>
+                    </button>
+                    
+                    <!-- Transparent click-outside overlay backplate -->
+                    <div t-if="state.isViewDropdownOpen" class="position-fixed top-0 start-0 w-100 h-100 bg-transparent" style="z-index: 1055;" t-on-click="toggleViewDropdown"/>
+                    
+                    <!-- Dropdown Menu -->
+                    <div t-if="state.isViewDropdownOpen" class="o_studio_ce_canvas_view_dropdown position-absolute end-0 mt-2 bg-white rounded shadow-lg p-2 border" style="z-index: 1060; min-width: 280px; top: 100%; font-family: 'Outfit', 'Inter', sans-serif;">
+                        <t t-foreach="groupedViews" t-as="group" t-key="group.typeLabel">
+                            <div class="px-2 py-1 text-muted fw-bold border-bottom mb-1" style="font-size: 0.65rem; letter-spacing: 0.05em; background-color: #f8f9fa; color: #6c757d !important;">
+                                <t t-esc="group.typeLabel"/>
+                            </div>
+                            <t t-foreach="group.views" t-as="v" t-key="v.id">
+                                <button class="dropdown-item btn btn-sm text-start w-100 py-1.5 px-2 rounded mb-1 d-flex justify-content-between align-items-center border-0 bg-transparent text-dark hover-bg-light"
+                                        t-att-class="{ 'bg-primary fw-bold text-white': props.view &amp;&amp; v.id === props.view.id }"
+                                        t-on-click="() => this.selectView(v.id)">
+                                    <span class="text-truncate text-capitalize" style="max-width: 180px; font-size: 0.78rem;" t-esc="v.name"/>
+                                    <span t-if="v.is_studio_ce" class="badge bg-warning text-dark fw-bold px-1.5 py-0.5 rounded-pill" style="font-size: 0.6rem; transform: scale(0.9);">🪄 Studio</span>
+                                </button>
+                            </t>
+                        </t>
+                    </div>
                 </div>
             </div>
 

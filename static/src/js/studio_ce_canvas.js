@@ -8,6 +8,7 @@ export class StudioCeCanvas extends Component {
             blocks: [],
             selectedBlockId: null,
             viewMode: "preview", // 'preview' or 'layout'
+            isViewDropdownOpen: false,
         });
 
         // Initialize design mode in shared config safely
@@ -102,6 +103,39 @@ export class StudioCeCanvas extends Component {
         } catch (e) {
             console.error("Failed to parse arch to blocks", e);
             return [];
+        }
+    }
+
+    get groupedViews() {
+        const groups = {};
+        const viewTypes = {
+            form: "Form Views",
+            list: "List Views",
+            tree: "List Views",
+            kanban: "Kanban Views",
+            search: "Search Views"
+        };
+        for (const view of this.props.views || []) {
+            const label = viewTypes[view.type] || (view.type.charAt(0).toUpperCase() + view.type.slice(1) + " Views");
+            if (!groups[label]) {
+                groups[label] = [];
+            }
+            groups[label].push(view);
+        }
+        return Object.entries(groups).map(([typeLabel, views]) => ({
+            typeLabel,
+            views
+        }));
+    }
+
+    toggleViewDropdown() {
+        this.state.isViewDropdownOpen = !this.state.isViewDropdownOpen;
+    }
+
+    selectView(viewId) {
+        this.state.isViewDropdownOpen = false;
+        if (this.props.onViewChange) {
+            this.props.onViewChange(viewId);
         }
     }
 

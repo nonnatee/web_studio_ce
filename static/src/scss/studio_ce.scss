@@ -731,4 +731,91 @@
             }
         }
     }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    //  View Selector Dropdowns
+    // ─────────────────────────────────────────────────────────────────────────────
+    @keyframes studioDropdownFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .o_studio_ce_view_dropdown_container,
+    .o_studio_ce_canvas_view_dropdown_container {
+        .dropdown-toggle {
+            transition: all 0.2s ease;
+            &:hover {
+                opacity: 0.9;
+                transform: scale(1.02);
+            }
+            &::after {
+                display: none; // hide bootstrap default arrow
+            }
+        }
+    }
+
+    // Navbar Dropdown (Dark Theme)
+    .o_studio_ce_view_dropdown {
+        animation: studioDropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        background-color: #202124 !important;
+        border: 1px solid #3c4043 !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+        border-radius: 8px !important;
+        overflow: hidden;
+
+        .dropdown-item {
+            color: #e8eaed !important;
+            font-weight: 500;
+            font-size: 0.8rem;
+            transition: all 0.15s ease;
+            text-shadow: none;
+
+            &:hover {
+                background-color: rgba(255, 255, 255, 0.08) !important;
+                color: #ffffff !important;
+            }
+
+            &.bg-primary {
+                background-color: #71639e !important; // Studio CE Theme Purple Accent
+                color: #ffffff !important;
+                font-weight: 600 !important;
+                box-shadow: 0 2px 6px rgba(113, 99, 158, 0.3);
+            }
+        }
+    }
+
+    // Canvas Dropdown (Light Theme)
+    .o_studio_ce_canvas_view_dropdown {
+        animation: studioDropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        background-color: #ffffff !important;
+        border: 1px solid #dadce0 !important;
+        box-shadow: 0 8px 24px rgba(60, 64, 67, 0.15) !important;
+        border-radius: 8px !important;
+        overflow: hidden;
+
+        .dropdown-item {
+            color: #3c4043 !important;
+            font-weight: 500;
+            font-size: 0.8rem;
+            transition: all 0.15s ease;
+
+            &:hover {
+                background-color: #f1f3f4 !important;
+                color: #202124 !important;
+            }
+
+            &.bg-primary {
+                background-color: #71639e !important; // Studio CE Theme Purple Accent
+                color: #ffffff !important;
+                font-weight: 600 !important;
+                box-shadow: 0 2px 6px rgba(113, 99, 158, 0.3);
+            }
+        }
+    }
 }
