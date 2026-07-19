@@ -51,6 +51,7 @@
                 <t t-if="state.blocks.length">
                     <!-- 1. Live Preview Mode -->
                     <t t-if="state.viewMode === 'preview'">
+                        <t t-set="isPreviewMode" t-value="true"/>
                         <t t-if="props.view.type === 'form'">
                             <t t-call="web_studio_ce.StudioCeFormPreview"/>
                         </t>
@@ -154,20 +155,30 @@
     <t t-name="web_studio_ce.StudioCeFormPreview" owl="1">
         <div class="o_form_view o_form_readonly bg-white border rounded shadow-sm p-4 mx-auto" style="max-width: 850px; min-height: 600px;">
             <!-- Mock Header Statusbar -->
-            <div class="o_form_statusbar border-bottom pb-2 mb-3 d-flex justify-content-between align-items-center">
-                <div class="o_statusbar_buttons d-flex gap-2">
-                    <button class="btn btn-secondary btn-sm" disabled="1">Edit</button>
-                    <button class="btn btn-secondary btn-sm" disabled="1">Create</button>
+            <div class="o_form_statusbar border-bottom pb-2 mb-3 d-flex justify-content-between align-items-center" style="font-family: 'Inter', sans-serif;">
+                <div class="o_statusbar_buttons d-flex gap-2 align-items-center">
+                    <button class="btn btn-primary btn-sm text-white px-3 fw-bold border-0" style="background-color: #71639e; font-size: 0.78rem;" disabled="1">Send</button>
+                    <button class="btn btn-light btn-sm text-dark border px-3" style="font-size: 0.78rem; background-color: #f8f9fa;" disabled="1">Print</button>
+                    <button class="btn btn-light btn-sm text-dark border px-3" style="font-size: 0.78rem; background-color: #f8f9fa;" disabled="1">Confirm</button>
+                    <button class="btn btn-light btn-sm text-dark border px-3" style="font-size: 0.78rem; background-color: #f8f9fa;" disabled="1">Preview</button>
+                    <span class="text-success cursor-pointer small font-weight-bold ms-2" style="color: #00878a !important; cursor: pointer; font-size: 0.78rem;">Add a button</span>
                 </div>
-                <div class="o_statusbar_status d-flex gap-1 align-items-center">
-                    <span class="text-secondary small cursor-pointer opacity-75" style="font-size:0.78rem; font-weight: 500; cursor: pointer;">Add a pipeline status bar</span>
+                <div class="o_statusbar_status d-flex align-items-center gap-2" style="font-size: 0.78rem;">
+                    <div class="o_statusbar_stages d-flex align-items-center">
+                        <span class="o_stage_pill active px-3 py-1 fw-bold" style="border-radius: 4px 0 0 4px; border: 1px solid #c1ecec; background-color: #e6f9f9; color: #00878a;">Quotation</span>
+                        <span class="o_stage_pill px-3 py-1 text-muted border-top border-bottom border-end bg-light">Quotation Sent</span>
+                        <span class="o_stage_pill px-3 py-1 text-muted border-top border-bottom border-end bg-light" style="border-radius: 0 4px 4px 0;">Sales Order</span>
+                    </div>
+                    <button class="btn btn-sm btn-link text-decoration-none text-dark fw-bold p-0 d-flex align-items-center gap-0.5 border-0 bg-transparent ms-1" style="font-size: 0.78rem;" disabled="1">
+                        <span>+</span> Add stage
+                    </button>
                 </div>
             </div>
 
             <!-- Mock Sheet -->
             <div class="o_form_sheet position-relative p-4 border rounded shadow-xs" style="min-height: 400px;">
                 <!-- Mock Button Box -->
-                <div class="oe_button_box d-flex justify-content-end border-bottom mb-2 pb-1 gap-2 bg-light p-2 rounded"
+                <div class="oe_button_box d-flex justify-content-end border-bottom mb-4 pb-1 gap-2 bg-light p-2 rounded"
                      style="min-height: 45px;"
                      t-on-dragover.prevent.stop="onBlockDragOver"
                      t-on-dragleave.stop="onBlockDragLeave"
@@ -192,8 +203,19 @@
                     </t>
                 </div>
 
-                <div class="mb-3">
-                    <span class="text-success cursor-pointer small font-weight-bold" style="color: #00878a !important; cursor: pointer; font-size: 0.82rem;">Add a button</span>
+                <!-- Title & Avatar Row -->
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div class="flex-grow-1">
+                        <h1 class="fw-bold mb-0 text-dark" style="font-size: 2.2rem; font-family: 'Outfit', sans-serif;">New</h1>
+                    </div>
+                    <div class="o_avatar_container d-flex align-items-center justify-content-center border rounded bg-light" 
+                         style="width: 90px; height: 90px; cursor: pointer; color: #71639e; border-style: dashed !important; border-color: #ced4da !important; transition: all 0.2s;"
+                         onmouseover="this.style.borderColor='#71639e'; this.style.backgroundColor='#f7f6fa';"
+                         onmouseout="this.style.borderColor='#ced4da'; this.style.backgroundColor='#f8f9fa';">
+                        <div class="text-center font-weight-bold" style="font-size: 0.72rem; line-height: 1.2;">
+                            Add<br/>Picture
+                        </div>
+                    </div>
                 </div>
 
                 <t t-foreach="sheetChildren" t-as="block" t-key="block.id">
@@ -229,13 +251,21 @@
     <t t-name="web_studio_ce.StudioCeFormElement" owl="1">
         <!-- Group -->
         <t t-if="block.tag === 'group'">
-            <div t-att-class="getBlockClass(block) + ' o_studio_ce_group mb-3 border rounded border-dashed p-3'"
+            <div t-att-class="getBlockClass(block) + (isPreviewMode ? ' o_studio_ce_group_preview mb-3 p-0' : ' o_studio_ce_group mb-3 border rounded border-dashed p-3')"
                  t-att-data-xpath="block.xpath"
                  t-on-click.stop="() => this.selectBlock(block)"
                  style="cursor: pointer;">
-                <div class="text-uppercase text-muted fw-bold mb-2" style="font-size: 0.65rem;">
-                    📂 <t t-esc="block.attrs.string || 'Group Container'"/>
-                </div>
+                
+                <t t-if="!isPreviewMode">
+                    <div class="text-uppercase text-muted fw-bold mb-2" style="font-size: 0.65rem;">
+                        📂 <t t-esc="block.attrs.string || 'Group Container'"/>
+                    </div>
+                </t>
+                <t t-elif="block.attrs.string">
+                    <h5 class="text-muted fw-bold mb-2 mt-1 small text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.05em; color: #71639e !important;">
+                        <t t-esc="block.attrs.string"/>
+                    </h5>
+                </t>
                 
                 <t t-if="hasSubGroups(block)">
                     <div class="row g-3">
@@ -262,11 +292,11 @@
 
         <!-- Field -->
         <t t-elif="block.tag === 'field'">
-            <div t-att-class="getBlockClass(block) + ' o_studio_ce_field d-flex align-items-center mb-2 p-2 border rounded bg-white'"
+            <div t-att-class="getBlockClass(block) + (isPreviewMode ? ' o_studio_ce_field_preview d-flex align-items-center mb-2 px-1 py-1 rounded bg-transparent' : ' o_studio_ce_field d-flex align-items-center mb-2 p-2 border rounded bg-white')"
                  t-att-data-xpath="block.xpath"
                  t-on-click.stop="() => this.selectBlock(block)"
-                 style="cursor: pointer; min-height: 48px;">
-                 <label class="text-secondary small fw-bold me-2 text-truncate" style="width: 150px;">
+                 style="cursor: pointer; min-height: 38px;">
+                 <label class="text-secondary small fw-bold me-2 text-truncate" style="width: 150px; font-size: 0.82rem;">
                      <t t-esc="getBlockLabel(block)"/>
                  </label>
                  
@@ -347,15 +377,21 @@
 
         <!-- Notebook -->
         <t t-elif="block.tag === 'notebook'">
-            <div class="o_notebook mt-4 border rounded p-3 bg-light">
-                <ul class="nav nav-tabs nav-fill mb-3">
+            <div t-att-class="'o_notebook mt-4 ' + (isPreviewMode ? 'o_notebook_preview' : 'border rounded p-3 bg-light')">
+                <ul class="nav nav-tabs mb-3" style="font-family: 'Outfit', sans-serif;">
                     <t t-foreach="block.children" t-as="page" t-key="page.id">
                         <li class="nav-item">
-                            <span class="nav-link py-1 active fw-bold small text-primary"><t t-esc="getBlockLabel(page)"/></span>
+                            <span t-att-class="'nav-link py-1.5 px-3 small ' + (page_index === 0 ? 'active fw-bold text-dark border-bottom-0' : 'text-muted border-0')" 
+                                  style="cursor: pointer; font-size: 0.82rem;">
+                                <t t-esc="getBlockLabel(page)"/>
+                            </span>
                         </li>
                     </t>
+                    <li t-if="isPreviewMode" class="nav-item d-flex align-items-center ms-2">
+                        <span class="badge bg-light text-dark cursor-pointer font-weight-bold" style="font-size: 0.72rem; padding: 3px 6px;">+</span>
+                    </li>
                 </ul>
-                <div class="tab-content bg-white p-3 border rounded">
+                <div t-att-class="isPreviewMode ? 'tab-content-preview pt-2' : 'tab-content bg-white p-3 border rounded'">
                     <t t-if="block.children.length">
                         <t t-foreach="block.children[0].children" t-as="sub" t-key="sub.id">
                             <t t-call="web_studio_ce.StudioCeFormElement">

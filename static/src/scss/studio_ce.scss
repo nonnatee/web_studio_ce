@@ -818,4 +818,126 @@
             }
         }
     }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    //  Odoo Form Live Preview Realism Styles
+    // ─────────────────────────────────────────────────────────────────────────────
+    .o_studio_ce_group_preview {
+        border: none !important;
+        background-color: transparent !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin-bottom: 1rem;
+    }
+
+    .o_studio_ce_field_preview {
+        position: relative;
+        border: 1px solid transparent !important;
+        background-color: transparent !important;
+        box-shadow: none !important;
+        transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        padding: 4px 8px !important;
+
+        label {
+            color: #495057 !important;
+            font-size: 0.85rem !important;
+            font-weight: 500 !important;
+        }
+
+        &:hover {
+            outline: 1.5px dashed rgba(113, 99, 158, 0.35) !important;
+            outline-offset: 1px;
+            background-color: rgba(113, 99, 158, 0.01) !important;
+            border-radius: 4px;
+        }
+
+        &.o_studio_ce_block_selected {
+            outline: 1.5px solid #71639e !important;
+            outline-offset: 1px;
+            background-color: rgba(113, 99, 158, 0.03) !important;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(113, 99, 158, 0.08) !important;
+        }
+    }
+
+    // StatusBar stages pills
+    .o_statusbar_stages {
+        gap: 0;
+
+        .o_stage_pill {
+            display: inline-block;
+            font-size: 0.76rem;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.15s ease;
+
+            &.active {
+                background-color: #e6f9f9 !important;
+                border-color: #c1ecec !important;
+                color: #00878a !important;
+            }
+
+            &:not(.active) {
+                background-color: #f1f2f5 !important;
+                color: #6c757d !important;
+            }
+        }
+    }
+
+    // Avatar section styling
+    .o_avatar_container {
+        border-color: #dee2e6 !important;
+        background-color: #f8f9fa !important;
+        color: #71639e !important;
+        font-family: 'Outfit', sans-serif;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+
+        &:hover {
+            border-color: #71639e !important;
+            background-color: #f7f6fa !important;
+            box-shadow: 0 2px 6px rgba(113, 99, 158, 0.1) !important;
+        }
+    }
+
+    // Clean Notebook styles
+    .o_notebook_preview {
+        background-color: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+
+        .nav-tabs {
+            border-bottom: 1px solid #dee2e6 !important;
+            background-color: transparent !important;
+
+            .nav-item {
+                margin-bottom: -1px;
+            }
+
+            .nav-link {
+                background-color: transparent !important;
+                border: none !important;
+                border-bottom: 2px solid transparent !important;
+                color: #6c757d !important;
+                transition: all 0.2s;
+
+                &.active {
+                    color: #212529 !important;
+                    border-bottom: 2px solid #71639e !important;
+                    font-weight: 600 !important;
+                }
+
+                &:hover:not(.active) {
+                    color: #495057 !important;
+                    border-bottom: 2px solid #ced4da !important;
+                }
+            }
+        }
+
+        .tab-content-preview {
+            background-color: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+        }
+    }
 }
