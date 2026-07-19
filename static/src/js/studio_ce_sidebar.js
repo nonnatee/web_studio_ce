@@ -18,6 +18,7 @@ export class StudioCeSidebar extends Component {
             reports: [],
             selectedReportId: null,
             windowActions: [],
+            activeSubTab: "add", // add, view, properties
         });
 
         onWillStart(async () => {
@@ -29,7 +30,16 @@ export class StudioCeSidebar extends Component {
             if (nextProps.modelName !== this.props.modelName) {
                 await this.loadReports(nextProps.modelName);
             }
+            if (nextProps.selectedField && nextProps.selectedField !== this.props.selectedField) {
+                this.state.activeSubTab = "properties";
+            } else if (!nextProps.selectedField && this.props.selectedField) {
+                this.state.activeSubTab = "add";
+            }
         });
+    }
+
+    selectSubTab(tab) {
+        this.state.activeSubTab = tab;
     }
 
     get filteredFields() {

@@ -2,15 +2,43 @@
 <templates xml:space="preserve">
     <t t-name="web_studio_ce.StudioCeSidebar" owl="1">
         <aside class="o_studio_ce_sidebar bg-white border-end d-flex flex-column flex-shrink-0 h-100 overflow-auto" style="width: 320px;">
+            <!-- Sub-tabs Row (+ Add, View, Properties) -->
+            <ul t-if="props.activeTab === 'views' || !['reports', 'automations', 'approvals', 'security', 'menu', 'logs'].includes(props.activeTab)"
+                class="nav-sidebar-subtabs d-flex nav-fill flex-shrink-0 list-unstyled p-0 m-0 border-bottom">
+                <li class="flex-grow-1 text-center">
+                    <button class="nav-link w-100 border-0 bg-transparent py-2"
+                            t-att-class="{ active: state.activeSubTab === 'add' }"
+                            t-on-click="() => this.selectSubTab('add')">
+                        + Add
+                    </button>
+                </li>
+                <li class="flex-grow-1 text-center">
+                    <button class="nav-link w-100 border-0 bg-transparent py-2"
+                            t-att-class="{ active: state.activeSubTab === 'view' }"
+                            t-on-click="() => this.selectSubTab('view')">
+                        View
+                    </button>
+                </li>
+                <li class="flex-grow-1 text-center">
+                    <button class="nav-link w-100 border-0 bg-transparent py-2"
+                            t-att-class="{ active: state.activeSubTab === 'properties' }"
+                            t-att-disabled="!props.selectedField ? '1' : undefined"
+                            t-on-click="() => this.selectSubTab('properties')">
+                        Properties
+                    </button>
+                </li>
+            </ul>
+
             <div class="tab-content p-3 flex-grow-1">
                 
                 <!-- 1. Fields Tab (Active in Views mode) -->
                 <div t-if="props.activeTab === 'views' || !['reports', 'automations', 'approvals', 'security', 'menu', 'logs'].includes(props.activeTab)" class="tab-pane show active">
-                    <!-- If field selected, render properties instead -->
-                    <t t-if="props.selectedField">
+                    
+                    <!-- Sub-panel A: Properties Tab -->
+                    <t t-if="state.activeSubTab === 'properties' and props.selectedField">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-bold mb-0 text-dark">Properties</h5>
-                            <button class="btn btn-sm btn-outline-secondary py-0 px-2" t-on-click="() => props.onDeselectField()">✕ Clear</button>
+                            <h5 class="fw-bold mb-0 text-white">Properties</h5>
+                            <button class="btn btn-sm btn-outline-light py-0 px-2" t-on-click="() => props.onDeselectField()">✕ Clear</button>
                         </div>
 
                         <t t-if="props.selectedField.ttype === 'properties'">
@@ -20,14 +48,14 @@
                             <!-- Smart Button Label -->
                             <div class="mb-3">
                                 <label class="form-label text-secondary small fw-bold">Button Label</label>
-                                <input type="text" class="form-control form-control-sm"
+                                <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary"
                                        t-att-value="props.selectedField.field_description"
                                        t-on-change="(ev) => this.overrideProperty('string', ev.target.value)"/>
                             </div>
                             <!-- Smart Button Icon Selector -->
                             <div class="mb-3">
                                 <label class="form-label text-secondary small fw-bold">Button Icon</label>
-                                <select class="form-select form-select-sm"
+                                <select class="form-select form-select-sm bg-dark text-white border-secondary"
                                         t-att-value="props.selectedField.icon || 'fa-star'"
                                         t-on-change="(ev) => this.overrideProperty('icon', ev.target.value)">
                                     <option value="fa-star">⭐ Star (fa-star)</option>
@@ -42,7 +70,7 @@
                             <!-- Smart Button Action Target -->
                             <div class="mb-3">
                                 <label class="form-label text-secondary small fw-bold">Target Window Action</label>
-                                <select class="form-select form-select-sm"
+                                <select class="form-select form-select-sm bg-dark text-white border-secondary"
                                         t-att-value="props.selectedField.action_id || ''"
                                         t-on-change="(ev) => this.overrideProperty('name', ev.target.value)">
                                     <option value="">-- No Action / Custom --</option>
@@ -53,7 +81,7 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label text-secondary small fw-bold">XPath Location</label>
-                                <input type="text" class="form-control form-control-sm bg-light" readonly="1"
+                                <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" readonly="1"
                                        t-att-value="props.selectedField.name"/>
                             </div>
                             <button class="btn btn-sm btn-danger w-100 mt-3" t-on-click="removeFieldFromView">🗑️ Remove Smart Button</button>
@@ -62,104 +90,80 @@
                             <!-- Group Label Input -->
                             <div class="mb-3">
                                 <label class="form-label text-secondary small fw-bold">Group Label</label>
-                                <input type="text" class="form-control form-control-sm"
+                                <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary"
                                        t-att-value="props.selectedField.field_description"
                                        t-on-change="(ev) => this.overrideProperty('string', ev.target.value)"/>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label text-secondary small fw-bold">XPath Target</label>
-                                <input type="text" class="form-control form-control-sm bg-light" readonly="1"
+                                <label class="form-label text-secondary small fw-bold">XPath Location</label>
+                                <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" readonly="1"
                                        t-att-value="props.selectedField.name"/>
                             </div>
-                            <button class="btn btn-sm btn-danger w-100 mt-2" t-on-click="removeFieldFromView">🗑️ Remove Group</button>
+                            <button class="btn btn-sm btn-danger w-100 mt-3" t-on-click="removeFieldFromView">🗑️ Remove Group</button>
+                        </t>
+                        <t t-elif="props.selectedField.ttype === 'page'">
+                            <!-- Page Label Input -->
+                            <div class="mb-3">
+                                <label class="form-label text-secondary small fw-bold">Page Label</label>
+                                <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary"
+                                       t-att-value="props.selectedField.field_description"
+                                       t-on-change="(ev) => this.overrideProperty('string', ev.target.value)"/>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-secondary small fw-bold">XPath Location</label>
+                                <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" readonly="1"
+                                       t-att-value="props.selectedField.name"/>
+                            </div>
+                            <button class="btn btn-sm btn-danger w-100 mt-3" t-on-click="removeFieldFromView">🗑️ Remove Page</button>
                         </t>
                         <t t-else="">
-                            <!-- Properties Inputs (Per-View Overrides) -->
                             <div class="mb-3">
                                 <label class="form-label text-secondary small fw-bold">Field Label</label>
-                                <input type="text" class="form-control form-control-sm"
+                                <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary"
                                        t-att-value="props.selectedField.field_description"
-                                       t-on-change="(ev) => this.overrideProperty('label', ev.target.value)"/>
+                                       t-on-change="(ev) => this.updateProperty('field_description', ev.target.value)"/>
                             </div>
 
-                            <div class="mb-3">
-                                <label class="form-label text-secondary small fw-bold">Technical Name</label>
-                                <input type="text" class="form-control form-control-sm bg-light" readonly="1"
-                                       t-att-value="props.selectedField.name"/>
+                            <!-- Basic Attributes -->
+                            <div class="d-flex flex-column gap-2 mb-3">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" class="form-check-input" id="fieldReq"
+                                           t-att-checked="props.selectedField.required"
+                                           t-on-change="(ev) => this.updateProperty('required', ev.target.checked)"/>
+                                    <label class="form-check-label text-white small" for="fieldReq">Required</label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" class="form-check-input" id="fieldRead"
+                                           t-att-checked="props.selectedField.readonly"
+                                           t-on-change="(ev) => this.updateProperty('readonly', ev.target.checked)"/>
+                                    <label class="form-check-label text-white small" for="fieldRead">Read Only</label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" class="form-check-input" id="fieldInvis"
+                                           t-att-checked="props.selectedField.invisible"
+                                           t-on-change="(ev) => this.updateProperty('invisible', ev.target.checked)"/>
+                                    <label class="form-check-label text-white small" for="fieldInvis">Invisible</label>
+                                </div>
                             </div>
 
-                            <div class="mb-3">
-                                <label class="form-label text-secondary small fw-bold">Field Type</label>
-                                <input type="text" class="form-control form-control-sm bg-light text-capitalize" readonly="1"
-                                       t-att-value="props.selectedField.ttype"/>
-                            </div>
-
-                            <div class="form-check mb-2">
-                                <input type="checkbox" class="form-check-input" id="prop_req"
-                                       t-att-checked="props.selectedField.required"
-                                       t-on-change="(ev) => this.overrideProperty('required', ev.target.checked ? '1' : '0')"/>
-                                <label class="form-check-label text-dark small" for="prop_req">Required field</label>
-                            </div>
-
-                            <div class="form-check mb-2">
-                                <input type="checkbox" class="form-check-input" id="prop_inv"
-                                       t-att-checked="props.selectedField.invisible"
-                                       t-on-change="(ev) => this.overrideProperty('invisible', ev.target.checked ? '1' : '0')"/>
-                                <label class="form-check-label text-dark small" for="prop_inv">Invisible / Hidden</label>
-                            </div>
-
-                            <div class="form-check mb-3">
-                                <input type="checkbox" class="form-check-input" id="prop_ro"
-                                       t-att-checked="props.selectedField.readonly"
-                                       t-on-change="(ev) => this.overrideProperty('readonly', ev.target.checked ? '1' : '0')"/>
-                                <label class="form-check-label text-dark small" for="prop_ro">Read-only field</label>
-                            </div>
-
-                            <!-- Override Widget -->
-                            <div class="mb-3 border-top pt-2">
-                                <label class="form-label text-secondary small fw-bold">Widget</label>
-                                <select class="form-select form-select-sm"
-                                        t-on-change="(ev) => this.overrideProperty('widget', ev.target.value)">
-                                    <option value="">Default</option>
-                                    <option value="many2many_tags">Tags (many2many_tags)</option>
-                                    <option value="monetary">Monetary</option>
-                                    <option value="percentage">Percentage</option>
-                                    <option value="phone">Phone</option>
-                                    <option value="email">Email</option>
-                                    <option value="url">URL</option>
-                                    <option value="image">Image</option>
-                                    <option value="selection">Selection</option>
-                                    <option value="html">HTML</option>
-                                    <option value="binary">Binary</option>
-                                </select>
-                            </div>
-
-                            <!-- Override Placeholder -->
-                            <div class="mb-3">
-                                <label class="form-label text-secondary small fw-bold">Placeholder</label>
-                                <input type="text" class="form-control form-control-sm"
-                                       placeholder="Enter help text..."
-                                       t-on-change="(ev) => this.overrideProperty('placeholder', ev.target.value)"/>
-                            </div>
-
-                            <!-- Computed Field Section -->
+                            <!-- Advanced/Calculated fields -->
                             <div class="mb-3 border-top pt-3">
-                                <div class="form-check mb-2">
-                                    <input type="checkbox" class="form-check-input" id="prop_is_compute"
-                                           t-att-checked="props.selectedField.compute ? true : false"
-                                           t-on-change="(ev) => this.updateProperty('compute', ev.target.checked ? '# Write your Python code here\n# Available variables:\n#  - self: recordset\nfor record in self:\n    record[\'' + props.selectedField.name + '\'] = False' : '')"/>
-                                    <label class="form-check-label text-dark small" for="prop_is_compute">Computed field</label>
+                                <div class="form-check form-switch mb-2">
+                                    <input type="checkbox" class="form-check-input" id="fieldCompute"
+                                           t-att-checked="!!props.selectedField.compute"
+                                           t-on-change="(ev) => this.updateProperty('compute', ev.target.checked ? 'result = 42' : false)"/>
+                                    <label class="form-check-label text-white small" for="fieldCompute">Calculated Field (Python)</label>
                                 </div>
                                 <div t-if="props.selectedField.compute" class="mb-2">
                                     <label class="form-label text-secondary small fw-bold">Dependencies</label>
-                                    <input type="text" class="form-control form-control-sm"
+                                    <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary"
                                            placeholder="e.g. x_field1,x_field2"
                                            t-att-value="props.selectedField.depends"
                                            t-on-change="(ev) => this.updateProperty('depends', ev.target.value)"/>
                                 </div>
                                 <div t-if="props.selectedField.compute" class="mb-2">
                                     <label class="form-label text-secondary small fw-bold">Python Code</label>
-                                    <textarea class="form-control form-control-sm font-monospace" rows="5" style="font-size:0.75rem;"
+                                    <textarea class="form-control form-control-sm font-monospace bg-dark text-white border-secondary" rows="5" style="font-size:0.75rem;"
                                               t-att-value="props.selectedField.compute"
                                               t-on-change="(ev) => this.updateProperty('compute', ev.target.value)"/>
                                 </div>
@@ -168,7 +172,7 @@
                             <!-- Relational Link -->
                             <div t-if="['many2one', 'one2many', 'many2many'].includes(props.selectedField.ttype)" class="mb-3 border-top pt-3">
                                 <label class="form-label text-secondary small fw-bold">Related Model</label>
-                                <input type="text" class="form-control form-control-sm"
+                                <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary"
                                        placeholder="e.g. res.partner"
                                        t-att-value="props.selectedField.relation"
                                        t-on-change="(ev) => this.updateProperty('relation', ev.target.value)"/>
@@ -179,52 +183,114 @@
                                 <label class="form-label text-secondary small fw-bold">Selection Options</label>
                                 <div class="list-group mb-2 border rounded">
                                     <t t-foreach="props.selectedField.selectionOptions || []" t-as="option" t-key="option[0]">
-                                        <div class="list-group-item d-flex justify-content-between align-items-center py-1 px-2 small bg-light">
+                                        <div class="list-group-item d-flex justify-content-between align-items-center py-1 px-2 small bg-dark border-secondary text-white">
                                             <span><strong t-esc="option[0]"/>: <t t-esc="option[1]"/></span>
                                             <button class="btn btn-sm text-danger p-0 border-0 bg-transparent font-weight-bold" t-on-click="() => this.removeSelectionOption(option[0])">✕</button>
                                         </div>
                                     </t>
                                 </div>
                                 <div class="input-group input-group-sm mb-1">
-                                    <input type="text" class="form-control" placeholder="Key" t-model="state.newOptionKey"/>
-                                    <input type="text" class="form-control" placeholder="Label" t-model="state.newOptionValue"/>
+                                    <input type="text" class="form-control bg-dark text-white border-secondary" placeholder="Key" t-model="state.newOptionKey"/>
+                                    <input type="text" class="form-control bg-dark text-white border-secondary" placeholder="Label" t-model="state.newOptionValue"/>
                                     <button class="btn btn-primary" t-on-click="addSelectionOption">+</button>
                                 </div>
                             </div>
+
                             <button class="btn btn-sm btn-danger w-100 mt-3" t-on-click="removeFieldFromView">🗑️ Remove Field</button>
                         </t>
                     </t>
 
+                    <!-- Sub-panel B: View Settings Tab -->
+                    <t t-elif="state.activeSubTab === 'view'">
+                        <h5 class="fw-bold mb-3">View Settings</h5>
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small fw-bold">Active View Name</label>
+                            <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" readonly="1"
+                                   t-att-value="props.views?.length ? props.views[0].name : 'Form View'"/>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small fw-bold">View Type</label>
+                            <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" readonly="1"
+                                   t-att-value="props.views?.length ? props.views[0].type.toUpperCase() : 'FORM'"/>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small fw-bold">Target Model</label>
+                            <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" readonly="1"
+                                   t-att-value="props.modelName"/>
+                        </div>
+                    </t>
+
+                    <!-- Sub-panel C: Add Components & Fields Tab (Default) -->
                     <t t-else="">
-                        <h5 class="fw-bold mb-2">Add Custom Field</h5>
-                        <div class="d-grid gap-1 mb-4 overflow-auto" style="max-height: 250px; border: 1px solid #eee; padding: 5px; border-radius: 4px;">
-                            <button class="btn btn-outline-primary btn-sm text-start py-1 d-flex align-items-center gap-2" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'char')" t-on-click="() => props.onAddField('char', 'Custom Label')"><span class="o_drag_handle text-muted">⋮⋮</span><span>+ Text (Char)</span></button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1 d-flex align-items-center gap-2" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'integer')" t-on-click="() => props.onAddField('integer', 'Custom Integer')"><span class="o_drag_handle text-muted">⋮⋮</span><span>+ Integer</span></button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1 d-flex align-items-center gap-2" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'float')" t-on-click="() => props.onAddField('float', 'Custom Float')"><span class="o_drag_handle text-muted">⋮⋮</span><span>+ Float</span></button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1 d-flex align-items-center gap-2" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'monetary')" t-on-click="() => props.onAddField('monetary', 'Custom Monetary')"><span class="o_drag_handle text-muted">⋮⋮</span><span>+ Monetary</span></button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1 d-flex align-items-center gap-2" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'date')" t-on-click="() => props.onAddField('date', 'Custom Date')"><span class="o_drag_handle text-muted">⋮⋮</span><span>+ Date</span></button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1 d-flex align-items-center gap-2" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'datetime')" t-on-click="() => props.onAddField('datetime', 'Custom Datetime')"><span class="o_drag_handle text-muted">⋮⋮</span><span>+ Datetime</span></button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1 d-flex align-items-center gap-2" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'boolean')" t-on-click="() => props.onAddField('boolean', 'Custom Checkbox')"><span class="o_drag_handle text-muted">⋮⋮</span><span>+ Checkbox (Boolean)</span></button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1 d-flex align-items-center gap-2" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'selection')" t-on-click="() => props.onAddField('selection', 'Selection List')"><span class="o_drag_handle text-muted">⋮⋮</span><span>+ Selection Dropdown</span></button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1 d-flex align-items-center gap-2" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'many2one')" t-on-click="() => props.onAddField('many2one', 'Related Link (m2o)')"><span class="o_drag_handle text-muted">⋮⋮</span><span>+ Relation (Many2one)</span></button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1 d-flex align-items-center gap-2" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'many2many')" t-on-click="() => props.onAddField('many2many', 'Relation Tags (m2m)')"><span class="o_drag_handle text-muted">⋮⋮</span><span>+ Relation (Many2many)</span></button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1 d-flex align-items-center gap-2" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'binary')" t-on-click="() => props.onAddField('binary', 'Custom Binary File')"><span class="o_drag_handle text-muted">⋮⋮</span><span>+ Binary File</span></button>
-                            <button class="btn btn-outline-primary btn-sm text-start py-1 d-flex align-items-center gap-2" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'html')" t-on-click="() => props.onAddField('html', 'Custom HTML Area')"><span class="o_drag_handle text-muted">⋮⋮</span><span>+ HTML Field</span></button>
+                        <h5 class="fw-bold mb-2">Components</h5>
+                        <div class="o_studio_ce_new_fields_grid mb-4">
+                            <button class="btn-field-card" draggable="true" t-on-dragstart="onDragStartNewGroup">
+                                <span class="field-card-icon">🔳</span>
+                                <span>Column</span>
+                            </button>
+                            <button class="btn-field-card" disabled="1" style="opacity: 0.65;">
+                                <span class="field-card-icon">🗂️</span>
+                                <span>Tabs</span>
+                            </button>
                         </div>
 
-                        <h5 class="fw-bold mb-2">Layout Components</h5>
-                        <div class="d-grid gap-1 mb-4" style="border: 1px solid #eee; padding: 5px; border-radius: 4px;">
-                            <button class="btn btn-outline-secondary btn-sm text-start py-1 d-flex align-items-center gap-2"
-                                    draggable="true"
-                                    t-on-dragstart="onDragStartNewGroup">
-                                <span class="o_drag_handle text-muted">⋮⋮</span>
-                                <span>🔳 Group Container</span>
+                        <h5 class="fw-bold mb-2">New Fields</h5>
+                        <div class="o_studio_ce_new_fields_grid mb-4">
+                            <button class="btn-field-card" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'char')" t-on-click="() => props.onAddField('char', 'Text Field')">
+                                <span class="field-card-icon">Ab</span>
+                                <span>Text</span>
                             </button>
-                            <button class="btn btn-outline-secondary btn-sm text-start py-1 d-flex align-items-center gap-2"
-                                    draggable="true"
-                                    t-on-dragstart="onDragStartNewSmartButton">
-                                <span class="o_drag_handle text-muted">⋮⋮</span>
-                                <span>⭐ Smart Button</span>
+                            <button class="btn-field-card" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'html')" t-on-click="() => props.onAddField('html', 'Multiline Text Field')">
+                                <span class="field-card-icon">✎</span>
+                                <span>Multiline Text</span>
+                            </button>
+                            <button class="btn-field-card" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'integer')" t-on-click="() => props.onAddField('integer', 'Integer Field')">
+                                <span class="field-card-icon">N⁺</span>
+                                <span>Integer</span>
+                            </button>
+                            <button class="btn-field-card" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'float')" t-on-click="() => props.onAddField('float', 'Decimal Field')">
+                                <span class="field-card-icon">1.5</span>
+                                <span>Decimal</span>
+                            </button>
+                            <button class="btn-field-card" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'html')" t-on-click="() => props.onAddField('html', 'HTML Area')">
+                                <span class="field-card-icon">&lt;/&gt;</span>
+                                <span>HTML</span>
+                            </button>
+                            <button class="btn-field-card" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'monetary')" t-on-click="() => props.onAddField('monetary', 'Monetary Field')">
+                                <span class="field-card-icon">€</span>
+                                <span>Monetary</span>
+                            </button>
+                            <button class="btn-field-card" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'date')" t-on-click="() => props.onAddField('date', 'Date Field')">
+                                <span class="field-card-icon">21</span>
+                                <span>Date</span>
+                            </button>
+                            <button class="btn-field-card" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'datetime')" t-on-click="() => props.onAddField('datetime', 'Datetime Field')">
+                                <span class="field-card-icon">🕒</span>
+                                <span>Datetime</span>
+                            </button>
+                            <button class="btn-field-card" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'boolean')" t-on-click="() => props.onAddField('boolean', 'Checkbox Field')">
+                                <span class="field-card-icon">✓</span>
+                                <span>CheckBox</span>
+                            </button>
+                            <button class="btn-field-card" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'selection')" t-on-click="() => props.onAddField('selection', 'Selection Field')">
+                                <span class="field-card-icon">⏷</span>
+                                <span>Selection</span>
+                            </button>
+                            <button class="btn-field-card" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'binary')" t-on-click="() => props.onAddField('binary', 'File Field')">
+                                <span class="field-card-icon">📄</span>
+                                <span>File</span>
+                            </button>
+                            <button class="btn-field-card" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'many2one')" t-on-click="() => props.onAddField('many2one', 'Many2one Relation')">
+                                <span class="field-card-icon">⚬──⚬</span>
+                                <span>Many2One</span>
+                            </button>
+                            <button class="btn-field-card" draggable="true" t-on-dragstart="(ev) => this.onDragStartNewField(ev, 'many2many')" t-on-click="() => props.onAddField('many2many', 'Many2many Tags')">
+                                <span class="field-card-icon">🏷️</span>
+                                <span>Many2Many</span>
+                            </button>
+                            <button class="btn-field-card" draggable="true" t-on-dragstart="onDragStartNewSmartButton">
+                                <span class="field-card-icon">⭐</span>
+                                <span>Smart Button</span>
                             </button>
                         </div>
 

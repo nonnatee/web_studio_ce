@@ -134,17 +134,15 @@
                     <button class="btn btn-secondary btn-sm" disabled="1">Edit</button>
                     <button class="btn btn-secondary btn-sm" disabled="1">Create</button>
                 </div>
-                <div class="o_statusbar_status d-flex gap-1 text-uppercase small text-muted">
-                    <span class="px-2 py-1 rounded bg-primary text-white fw-bold">Draft</span>
-                    <span class="px-2 py-1">In Progress</span>
-                    <span class="px-2 py-1">Done</span>
+                <div class="o_statusbar_status d-flex gap-1 align-items-center">
+                    <span class="text-secondary small cursor-pointer opacity-75" style="font-size:0.78rem; font-weight: 500; cursor: pointer;">Add a pipeline status bar</span>
                 </div>
             </div>
 
             <!-- Mock Sheet -->
             <div class="o_form_sheet position-relative p-4 border rounded shadow-xs" style="min-height: 400px;">
                 <!-- Mock Button Box -->
-                <div class="oe_button_box d-flex justify-content-end border-bottom mb-3 pb-2 gap-2 bg-light p-2 rounded"
+                <div class="oe_button_box d-flex justify-content-end border-bottom mb-2 pb-1 gap-2 bg-light p-2 rounded"
                      style="min-height: 45px;"
                      t-on-dragover.prevent.stop="onBlockDragOver"
                      t-on-dragleave.stop="onBlockDragLeave"
@@ -169,11 +167,35 @@
                     </t>
                 </div>
 
+                <div class="mb-3">
+                    <span class="text-success cursor-pointer small font-weight-bold" style="color: #00878a !important; cursor: pointer; font-size: 0.82rem;">Add a button</span>
+                </div>
+
                 <t t-foreach="sheetChildren" t-as="block" t-key="block.id">
                     <t t-call="web_studio_ce.StudioCeFormElement">
                         <t t-set="block" t-value="block"/>
                     </t>
                 </t>
+
+                <!-- Mock Chatter Widget -->
+                <div class="o_studio_ce_chatter_mock">
+                    <div class="d-flex gap-2 mb-3">
+                        <button class="btn btn-secondary btn-chatter text-dark bg-light border" disabled="1">Send message</button>
+                        <button class="btn btn-secondary btn-chatter text-dark bg-light border" disabled="1">Log note</button>
+                        <button class="btn btn-secondary btn-chatter text-dark bg-light border" disabled="1">Activity</button>
+                    </div>
+                    
+                    <div class="chatter-activity-row">
+                        <div class="chatter-avatar">MA</div>
+                        <div class="chatter-content">
+                            <div class="d-flex align-items-center gap-2">
+                                <strong class="text-dark">Mitchell Admin</strong>
+                                <span class="text-muted" style="font-size:0.7rem;">5:20 PM</span>
+                            </div>
+                            <div class="text-muted mt-1">Creating a new record...</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </t>

@@ -6,10 +6,15 @@ Odoo Studio CE replicates the core and advanced capabilities of Odoo 19 Enterpri
 
 ## 🎨 1. Visual Designer Canvas
 - **Design Mode Toggle**: Activates an interactive design layer on standard Odoo forms, lists, and kanban views.
+- **Odoo 19 Slate-Gray Layout**: Fully replicates the slate-gray color palette, premium Google Fonts (Outfit & Inter), and structure of the official Odoo 19 Enterprise Studio.
+- **Dynamic Breadcrumbs & UNDO/REDO**: Top header breadcrumbs matching active view types (`VIEWS > FORM`) and fully functional Undo/Redo buttons wired to customizations logs to reverse recent changes.
+- **Left Sidebar Sub-Tabs**: Reorganized sidebar featuring (+ Add, View, Properties) sub-tabs that automatically focus properties when canvas blocks are clicked.
+- **2-Column Field Grid Palette**: Clean, icon-rich 2-column button grid of field components (Char, HTML, Integer, Float, Monetary, Date, Datetime, Boolean, Selection, Binary, Many2one, Many2many, Smart Button).
 - **Interception of Clicks**: Disables default input focuses and clicks, allowing designers to select elements for editing.
 - **Drag-and-Drop Handles**: Custom visual handles (`⋮`) to rearrange fields and inner groups.
 - **Form/List/Kanban Renderer Mock Previews**: Renders realistic visual mock representations for Forms (with sheet/group columns grids and notebook tab systems), Lists (with draggable rows and headers), and Kanbans (with board columns and status cards).
 - **Interactive Mode Switcher**: A header toggle allowing the developer to switch dynamically between **Live Preview** (visual mock mode) and **XML Layout Blocks** (structural schema outline node tree).
+- **Chatter & Statusbar Mockups**: Realistic visual mockups of Odoo's Chatter feed, statusbar pipeline widgets, and button creation placeholders.
 
 ---
 

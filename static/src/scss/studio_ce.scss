@@ -2,34 +2,35 @@
 .o_studio_ce_editor {
     height: 100vh;
     font-family: 'Outfit', 'Inter', sans-serif;
-    background-color: #f3f4f6;
+    background-color: #f1f2f5;
     color: #1f2937;
 
     .navbar-studio {
-        background-color: #714B67 !important;
-        border-bottom: 1px solid #5a3c52;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        background-color: #2a2b2f !important;
+        border-bottom: 1px solid #1a1a1c;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 
         .navbar-brand {
             font-family: 'Outfit', sans-serif;
-            letter-spacing: -0.025em;
+            letter-spacing: -0.01em;
+            font-size: 0.95rem;
         }
 
         .nav-studio-tabs {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 2px;
             margin: 0;
             padding: 0;
             list-style: none;
 
             .nav-item {
                 .nav-link {
-                    color: rgba(255, 255, 255, 0.75) !important;
-                    font-size: 0.85rem;
+                    color: rgba(255, 255, 255, 0.7) !important;
+                    font-size: 0.82rem;
                     font-weight: 500;
-                    padding: 6px 14px;
-                    border-radius: 6px;
+                    padding: 5px 12px;
+                    border-radius: 4px;
                     transition: all 0.15s ease;
                     cursor: pointer;
                     display: flex;
@@ -38,12 +39,12 @@
 
                     &:hover {
                         color: #ffffff !important;
-                        background-color: rgba(255, 255, 255, 0.1);
+                        background-color: rgba(255, 255, 255, 0.05);
                     }
 
                     &.active {
                         color: #ffffff !important;
-                        background-color: rgba(255, 255, 255, 0.2) !important;
+                        background-color: rgba(255, 255, 255, 0.12) !important;
                         font-weight: 600;
                     }
                 }
@@ -52,11 +53,90 @@
     }
 
     .o_studio_ce_sidebar {
-        background-color: #ffffff;
-        border-right: 1px solid #e5e7eb;
+        background-color: #2a2b2f;
+        color: #ffffff;
+        border-right: 1px solid #1a1a1c;
         width: 320px;
         min-width: 320px;
-        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.02);
+        box-shadow: 2px 0 6px rgba(0, 0, 0, 0.05);
+
+        // Sub-tabs styling (+ Add, View, Properties)
+        .nav-sidebar-subtabs {
+            background-color: #1e1f22;
+            border-bottom: 1px solid #141517;
+
+            .nav-link {
+                color: rgba(255, 255, 255, 0.55);
+                font-size: 0.8rem;
+                font-weight: 600;
+                border: none;
+                border-radius: 0;
+                padding: 10px 0;
+                transition: all 0.15s ease;
+
+                &:hover {
+                    color: #ffffff;
+                    background-color: rgba(255, 255, 255, 0.02);
+                }
+
+                &.active {
+                    color: #ffffff;
+                    background-color: #2a2b2f;
+                    border-bottom: 2px solid #71639e;
+                }
+            }
+        }
+
+        .tab-content {
+            color: #e0e0e0;
+            
+            h5 {
+                color: #ffffff;
+                font-size: 0.9rem;
+                letter-spacing: 0.02em;
+            }
+
+            label {
+                color: #b0b0b0 !important;
+            }
+        }
+
+        // New Fields 2-column grid cards
+        .o_studio_ce_new_fields_grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+
+            .btn-field-card {
+                background-color: #ffffff;
+                color: #2c2d30 !important;
+                border: 1px solid #dcdce0;
+                border-radius: 4px;
+                padding: 8px 10px;
+                font-size: 0.78rem;
+                font-weight: 500;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                text-align: left;
+                transition: all 0.15s ease;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+
+                &:hover {
+                    border-color: #71639e;
+                    background-color: #f7f6fa;
+                    transform: translateY(-1px);
+                    box-shadow: 0 2px 4px rgba(113, 99, 158, 0.15);
+                }
+
+                .field-card-icon {
+                    font-size: 0.95rem;
+                    opacity: 0.85;
+                    width: 16px;
+                    text-align: center;
+                }
+            }
+        }
     }
 
     .border-dashed {
@@ -609,6 +689,45 @@
             span {
                 display: block !important;
                 color: #28a745 !important;
+            }
+        }
+    }
+
+    // Form Canvas Chatter mockup styling
+    .o_studio_ce_chatter_mock {
+        border-top: 1px solid #e5e7eb;
+        margin-top: 40px;
+        padding-top: 20px;
+        font-family: 'Outfit', sans-serif;
+
+        .btn-chatter {
+            font-size: 0.8rem;
+            font-weight: 500;
+            padding: 5px 12px;
+            border-radius: 4px;
+        }
+
+        .chatter-activity-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-size: 0.82rem;
+
+            .chatter-avatar {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                background-color: #71639e;
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+                font-size: 0.85rem;
+            }
+
+            .chatter-content {
+                line-height: 1.3;
             }
         }
     }

@@ -48,6 +48,26 @@ export class StudioCeEditor extends Component {
         });
     }
 
+    get activeViewType() {
+        const activeView = this.state.views.find(v => v.id === this.state.viewId) || this.state.views[0];
+        return activeView ? activeView.type : "form";
+    }
+
+    async undoLastChange() {
+        if (!this.state.logs || this.state.logs.length === 0) {
+            alert("No customisations to undo.");
+            return;
+        }
+        const latestLog = this.state.logs[0];
+        if (confirm(`Are you sure you want to undo the last customisation: "${latestLog.name}"?`)) {
+            await this.revertLog(latestLog.id);
+        }
+    }
+
+    redoLastChange() {
+        alert("Redo functionality is not supported. Please recreate the element if needed.");
+    }
+
     async rpc(route, params) {
         return rpc(route, params);
     }

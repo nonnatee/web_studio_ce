@@ -7,12 +7,23 @@
 
             <!-- Top Navbar -->
             <header class="navbar-studio text-white px-3 py-2 flex-shrink-0 d-flex justify-content-between align-items-center">
-                <!-- Left: Branding -->
-                <div class="d-flex align-items-center">
-                    <span class="navbar-brand fw-bold mb-0 h5 text-white d-flex align-items-center gap-1">
-                        <span style="font-size: 1.1rem;">🛠️</span> Odoo Studio <span class="text-info" style="font-size: 0.8rem; font-weight: 500;">CE</span>
-                    </span>
-                    <span class="badge bg-white bg-opacity-25 text-white ms-3 px-2 py-1 small rounded font-monospace" style="font-size: 0.75rem;"><t t-esc="state.model"/></span>
+                <!-- Left: Dynamic Breadcrumb -->
+                <div class="d-flex align-items-center text-uppercase font-weight-bold" style="font-family: 'Outfit', sans-serif; font-size: 0.85rem; letter-spacing: 0.05em; color: rgba(255, 255, 255, 0.85);">
+                    <span class="text-muted" style="color: rgba(255, 255, 255, 0.5) !important;">Views</span>
+                    <span class="mx-2 text-white-50">></span>
+                    <span class="text-white fw-bold"><t t-esc="activeViewType"/></span>
+                    <span class="badge bg-white bg-opacity-10 text-white-50 ms-3 font-monospace" style="font-size: 0.65rem; text-transform: none;"><t t-esc="state.model"/></span>
+                </div>
+
+                <!-- Center: Undo/Redo Controls -->
+                <div class="d-flex align-items-center gap-2 text-uppercase" style="font-family: 'Outfit', sans-serif; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.03em;">
+                    <button class="btn btn-link text-white text-decoration-none p-0 d-flex align-items-center gap-1 opacity-75 hover-opacity-100 border-0 bg-transparent" t-on-click="undoLastChange" style="font-size:0.78rem;">
+                        <span>↶</span> Undo
+                    </button>
+                    <span class="text-muted mx-1" style="opacity: 0.3;">|</span>
+                    <button class="btn btn-link text-white text-decoration-none p-0 d-flex align-items-center gap-1 opacity-75 hover-opacity-100 border-0 bg-transparent" t-on-click="redoLastChange" style="font-size:0.78rem;">
+                        <span>↷</span> Redo
+                    </button>
                 </div>
 
                 <!-- Center: Navigation Tabs -->
