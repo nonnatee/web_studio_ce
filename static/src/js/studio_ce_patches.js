@@ -78,6 +78,12 @@ function getElementXPath(el, model) {
     if (el.closest(".o_form_sheet")) {
         return "//sheet";
     }
+    if (el.closest(".o_list_view, .o_list_renderer")) {
+        return "//list";
+    }
+    if (el.closest(".o_kanban_view, .o_kanban_renderer")) {
+        return "//kanban";
+    }
 
     return "//form";
 }

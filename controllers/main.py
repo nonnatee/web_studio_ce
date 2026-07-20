@@ -83,7 +83,17 @@ class StudioCeController(http.Controller):
                 return "//sheet", "inside"
         except Exception:
             pass
-        return "//form", "inside"
+            
+        fallback_tag = "form"
+        if base_tree is not None:
+            if base_tree.tag in ['form', 'list', 'tree', 'kanban', 'search']:
+                fallback_tag = base_tree.tag
+            else:
+                for child in base_tree:
+                    if child.tag in ['form', 'list', 'tree', 'kanban', 'search']:
+                        fallback_tag = child.tag
+                        break
+        return f"//{fallback_tag}", "inside"
 
     @http.route('/web_studio_ce/get_studio_context', type='json', auth='user')
     def get_studio_context(self, model_name, view_id=None):
