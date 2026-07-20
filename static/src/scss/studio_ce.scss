@@ -1,4 +1,3 @@
-
 .o_studio_ce_editor {
     height: 100vh;
     font-family: 'Outfit', 'Inter', sans-serif;
@@ -8,7 +7,7 @@
     .navbar-studio {
         background-color: #2a2b2f !important;
         border-bottom: 1px solid #1a1a1c;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 
         .navbar-brand {
             font-family: 'Outfit', sans-serif;
@@ -89,7 +88,7 @@
 
         .tab-content {
             color: #e0e0e0;
-            
+
             h5 {
                 color: #ffffff;
                 font-size: 0.9rem;
@@ -155,6 +154,7 @@
         opacity: 0;
         transform: translateY(12px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -368,13 +368,13 @@
     .o_canvas_field_card {
         border-width: 1px;
         transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-        
+
         &:hover {
             border-color: #007bff !important;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
         }
     }
-    
+
     .btn-xs {
         padding: 0.1rem 0.25rem;
         font-size: 0.7rem;
@@ -399,16 +399,20 @@
 
 .o_canvas_empty_placeholder {
     transition: all 0.2s ease-in-out;
-    &:hover, &.o_drag_over_container {
+
+    &:hover,
+    &.o_drag_over_container {
         border-color: #007bff !important;
         background-color: rgba(0, 123, 255, 0.05) !important;
         color: #007bff !important;
     }
 }
 
-.o_canvas_sheet, .o_canvas_group, .o_canvas_page {
+.o_canvas_sheet,
+.o_canvas_group,
+.o_canvas_page {
     transition: all 0.2s ease-in-out;
-    
+
     &.o_drag_over_container {
         border: 2px dashed #007bff !important;
         background-color: rgba(0, 123, 255, 0.02) !important;
@@ -426,11 +430,11 @@
     padding: 0 4px;
     display: inline-block;
     transition: color 0.15s ease-in-out;
-    
+
     &:hover {
         color: #007bff !important;
     }
-    
+
     &:active {
         cursor: grabbing;
     }
@@ -440,7 +444,7 @@
     background-color: rgba(0, 0, 0, 0.02);
     padding: 4px 8px;
     border-radius: 4px 4px 0 0;
-    
+
     .o_drag_handle {
         color: #888888;
     }
@@ -449,12 +453,12 @@
 .o_canvas_group {
     border: 1px solid rgba(0, 0, 0, 0.08);
     transition: all 0.2s ease-in-out;
-    
+
     &:hover {
         border-color: rgba(0, 123, 255, 0.3) !important;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
     }
-    
+
     &.border-primary {
         border: 1.5px solid #007bff !important;
         background-color: rgba(0, 123, 255, 0.02) !important;
@@ -464,6 +468,7 @@
 .o_canvas_field_card {
     .o_drag_handle {
         opacity: 0.5;
+
         &:hover {
             opacity: 1;
         }
@@ -478,7 +483,7 @@
     font-size: 0.75rem;
     font-weight: 500;
     border-radius: 12px;
-    
+
     &.bg-primary {
         box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
     }
@@ -494,12 +499,14 @@
         outline: 2px dashed #007bff !important;
         outline-offset: -2px;
         transition: outline 0.15s ease-in-out;
-        
-        &.o_group, &.o_inner_group {
+
+        &.o_group,
+        &.o_inner_group {
             outline-color: #6f42c1 !important; // purple
         }
-        
-        &.tab-pane, &.nav-link {
+
+        &.tab-pane,
+        &.nav-link {
             outline-color: #fd7e14 !important; // amber
         }
     }
@@ -511,12 +518,14 @@
         position: relative;
         background-color: rgba(0, 123, 255, 0.05) !important;
 
-        &.o_group, &.o_inner_group {
+        &.o_group,
+        &.o_inner_group {
             outline-color: #6f42c1 !important;
             background-color: rgba(111, 66, 193, 0.05) !important;
         }
 
-        &.tab-pane, &.nav-link {
+        &.tab-pane,
+        &.nav-link {
             outline-color: #fd7e14 !important;
             background-color: rgba(253, 126, 20, 0.05) !important;
         }
@@ -534,17 +543,19 @@
             padding: 1px 6px;
             border-radius: 3px;
             z-index: 100;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
             pointer-events: none;
             white-space: nowrap;
         }
 
-        &.o_group::after, &.o_inner_group::after {
+        &.o_group::after,
+        &.o_inner_group::after {
             background-color: #6f42c1;
             content: "Group (" attr(name) ")";
         }
 
-        &.tab-pane::after, &.nav-link::after {
+        &.tab-pane::after,
+        &.nav-link::after {
             background-color: #fd7e14;
             content: "Page (" attr(name) ")";
         }
@@ -570,10 +581,11 @@
         padding: 2px 8px;
         z-index: 1050;
         pointer-events: auto;
-        
+
         button {
             cursor: pointer;
             transition: opacity 0.2s;
+
             &:hover {
                 opacity: 0.8;
             }
@@ -612,7 +624,7 @@
         cursor: grab;
         z-index: 100;
         user-select: none;
-        
+
         &:active {
             cursor: grabbing;
         }
@@ -623,13 +635,17 @@
     }
 
     // Hover / selection layouts with shift spacing for handle
-    .o_field_widget, .o_group, .o_inner_group, th[data-name] {
+    .o_field_widget,
+    .o_group,
+    .o_inner_group,
+    th[data-name] {
         transition: padding-left 0.15s ease-in-out;
-        
-        &.o_studio_ce_hover, &.o_studio_ce_selected {
+
+        &.o_studio_ce_hover,
+        &.o_studio_ce_selected {
             padding-left: 18px !important;
-            
-            > .o_studio_ce_drag_handle {
+
+            >.o_studio_ce_drag_handle {
                 display: flex !important;
             }
         }
@@ -643,24 +659,28 @@
         &.o_studio_ce_block_field {
             border-left-color: #007bff !important;
         }
+
         &.o_studio_ce_block_group {
             border-left-color: #6f42c1 !important;
             background-color: rgba(111, 66, 193, 0.02) !important;
         }
-        &.o_studio_ce_block_notebook, &.o_studio_ce_block_page {
+
+        &.o_studio_ce_block_notebook,
+        &.o_studio_ce_block_page {
             border-left-color: #fd7e14 !important;
             background-color: rgba(253, 126, 20, 0.02) !important;
         }
+
         &.o_studio_ce_block_sheet {
             border-left-color: #4b5563 !important;
             background-color: rgba(75, 85, 99, 0.02) !important;
         }
-        
+
         &:hover {
             border-color: #adb5bd !important;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.05) !important;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05) !important;
         }
-        
+
         &.o_studio_ce_block_selected {
             border-color: #007bff !important;
             box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15) !important;
@@ -675,17 +695,17 @@
         background-color: transparent;
         transition: all 0.2s ease-in-out;
         overflow: hidden;
-        
+
         span {
             display: none !important;
         }
-        
+
         &.o_studio_ce_drop_zone_active {
             height: 28px;
             background-color: rgba(40, 167, 69, 0.08) !important;
             border-color: #28a745 !important;
             border-style: dashed !important;
-            
+
             span {
                 display: block !important;
                 color: #28a745 !important;
@@ -740,6 +760,7 @@
             opacity: 0;
             transform: translateY(8px);
         }
+
         to {
             opacity: 1;
             transform: translateY(0);
@@ -750,10 +771,12 @@
     .o_studio_ce_canvas_view_dropdown_container {
         .dropdown-toggle {
             transition: all 0.2s ease;
+
             &:hover {
                 opacity: 0.9;
                 transform: scale(1.02);
             }
+
             &::after {
                 display: none; // hide bootstrap default arrow
             }
